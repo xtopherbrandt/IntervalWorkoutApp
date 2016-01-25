@@ -1,5 +1,19 @@
 using Toybox.System as Sys;
 
+
+enum
+{
+	WORKOUT,
+	REPEATER,
+	STEP_LAP,
+	STEP_TIME,
+	STEP_DISTANCE,
+	SET_ON_TIME,
+	SET_ON_DISTANCE
+}
+
+// The base class for all steps
+// A step is a basic block within a workout. All steps have a name, a performance target, an onStart method and a callback to call when they are done.
 class IntervalStepBaseModel 
 {
 	var name;
@@ -18,6 +32,7 @@ class IntervalStepBaseModel
 	}
 }
 
+// A simple interval step which ends when the lap (back) button is pushed.
 class LapIntervalModel extends IntervalStepBaseModel
 {
 	
@@ -36,8 +51,16 @@ class LapIntervalModel extends IntervalStepBaseModel
 		// Call the done callback
 		doneCallback.invoke();
 	}
+	
+	function getCurrentStepInfo()
+	{
+		return {"name" => name, "until" => "Lap Button", "type" => STEP_LAP };
+	}
+
 }
 
+// An interval step which ends once the specified distance is reached within this interval.
+// For example, run for 1Km.
 class DistanceIntervalModel extends IntervalStepBaseModel
 {
 	var distance;
@@ -60,6 +83,8 @@ class DistanceIntervalModel extends IntervalStepBaseModel
 
 }
 
+// An interval step which ends once the specified time has passed within this interval.
+// For example, recover for 60 seconds.
 class TimeIntervalModel extends IntervalStepBaseModel
 {
 	var duration;
@@ -81,6 +106,12 @@ class TimeIntervalModel extends IntervalStepBaseModel
 		// Call the done callback
 		doneCallback.invoke();
 	}
+	
+	function getCurrentStepInfo()
+	{
+		return {"name" => name, "until" => duration, "type" => STEP_TIME };
+	}
+
 }
 
 // An interval step type that has a work step added to it (like lap, distance or time) and includes an embedded rest step
@@ -98,8 +129,10 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 	}
 }
 
-
-
+// A repeater step which allows a set of interval steps to be repeated a specified number of times.
+// A repeater contains a collection of other interval steps which are repeated in the same order everytime.
+// A repeater may also contain another repeater.
+// For example repeat the following 5 times: run 500 m (distance step), walk 60 seconds (time step)
 class IntervalRepeatModel extends IntervalStepBaseModel
 {
 
@@ -156,9 +189,14 @@ class IntervalRepeatModel extends IntervalStepBaseModel
 		return method( :onDone );
 	}
 	
+	function getCurrentStepInfo()
+	{
+		return intervalSteps[currentStepId].getCurrentStepInfo();
+	}
+	
 }
 
-
+// The top level collection of the workout
 class Workout
 {
 	var name;
@@ -166,8 +204,9 @@ class Workout
 	var currentStepId;	// the array identity of the current step
 	var totalSteps;
 	
-	function initialize( topLevelStepCount )
+	function initialize( workoutName, topLevelStepCount )
 	{
+		name = workoutName;
 		currentStepId = 0;
 		totalSteps = topLevelStepCount;
 		workoutSteps = new [ topLevelStepCount ];
@@ -205,16 +244,22 @@ class Workout
 	{
 		return method( :onDone );
 	}
+	
+	function getCurrentStepInfo()
+	{
+		return workoutSteps[currentStepId].getCurrentStepInfo();
+	}
 }
 
 function testWorkout ()
 {
-	var workout = new Workout(3);
+	var workout = new Workout( "Test Workout", 3);
 	
 	workout.workoutSteps[0] = new LapIntervalModel( "Warm Up", "Easy", workout.getDoneCallback() );
-	workout.workoutSteps[1] = new IntervalRepeatModel( 2, 1, "Repeats", "Work", workout.getDoneCallback() );
+	workout.workoutSteps[1] = new IntervalRepeatModel( 2, 2, "Repeats", "Work", workout.getDoneCallback() );
 	
-	workout.workoutSteps[1].intervalSteps[0] = new TimeIntervalModel( 5, "5 sec", "Work", workout.workoutSteps[1].getDoneCallback() );
+	workout.workoutSteps[1].intervalSteps[0] = new TimeIntervalModel( 60, "Hard Effort", "Work", workout.workoutSteps[1].getDoneCallback() );
+	workout.workoutSteps[1].intervalSteps[1] = new TimeIntervalModel( 30, "Recovery", "Easy", workout.workoutSteps[1].getDoneCallback() );
 
 	workout.workoutSteps[2] = new LapIntervalModel( "Cool Down", "Easy", workout.getDoneCallback() );
 	
