@@ -1,0 +1,7 @@
+<resources>
+	<drawable-list id="Launcher">
+	    <bitmap id="LauncherIcon" filename="launcher_icon.png" />
+	</drawable-list>
+	<drawable-list id="MainBackground" background="Gfx.COLOR_WHITE" foreground="Gfx.COLOR_BLACK" />
+		
+</resources>

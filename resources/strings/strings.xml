@@ -1,0 +1,9 @@
+<strings>
+    <string id="AppName">IntervalTimer</string>
+
+    <string id="prompt">Click the menu button</string>
+
+    <string id="workout_1">1K 2K 2K 1K</string>
+    <string id="workout_2">Workout 2</string>
+    <string id="workout_3">Workout 3</string>
+</strings>
