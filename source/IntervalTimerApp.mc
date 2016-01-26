@@ -22,9 +22,10 @@ class IntervalTimerApp extends App.AppBase
     }
 
     // Return the initial view of your application here
-    function getInitialView() {
-    	
-        return [ new IntervalTimerListView(), new IntervalTimerDelegate( -1 ) ];
+    function getInitialView() 
+    {
+    	var view = new IntervalTimerListView();
+        return [ view, new IntervalTimerDelegate( -1, view, testWorkout()  ) ];
     }
 
 }

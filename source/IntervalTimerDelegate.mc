@@ -5,13 +5,16 @@ using Toybox.System as Sys;
 class IntervalTimerDelegate extends Ui.BehaviorDelegate
 {
 	hidden var _page;
-	var workout;
+	hidden var _workout;
+	hidden var _view;
 
-    function initialize( page )
+    function initialize( page, view, workout )
     {
     	// initialize the page to -1 --> workout list page
         _page = page;
-        workout = testWorkout();
+        _workout = workout;
+        _view = view;
+        
     }
 
 	// Cycle through the pages after -1
@@ -19,7 +22,8 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     {
         _page = (_page + 1) % 2;
         System.println( "Page: " + _page );
-        Ui.switchToView(getView(_page), getDelegate(_page), Ui.SLIDE_UP);
+                
+        switchToView( Ui.SLIDE_UP);
     }
 
     function onPreviousPage() 
@@ -33,7 +37,7 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
         
         _page = _page % 2;
         
-        Ui.switchToView(getView(_page), getDelegate(_page), Ui.SLIDE_DOWN);
+        switchToView( Ui.SLIDE_DOWN);
     }
 	
     function onMenu()
@@ -43,9 +47,9 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     }
     
     function onBack()
-    {    	
-    	System.println( workout.getCurrentStepInfo() );
-    	workout.onLap();
+    {   
+    	_workout.onLap();
+		
     	return true;
     }
     
@@ -92,7 +96,7 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
             else
             {
                 startTimer();
-            	workout.onStart();
+            	_workout.onStart();
             }
         }    	
  
@@ -111,41 +115,40 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     
     function callback1()
     {
-    	var view;
-    	
+   	
         count1 += 1;
         
-		view = getView(_page);
-		view.update();
+        Ui.requestUpdate();
     }
-
-    function getView(_page)
+	
+    function switchToView( transition )
     {
-        var view;
-
+ 
         if( -1 == _page )
         {
-            view = new IntervalTimerListView();
+            _view = new IntervalTimerListView();
         }
         else if( 0 == _page )
         {
-            view = new StepView();
+            _view = new StepView( _workout );
         }
         else if( 1 == _page )
         {
-            view = new Page2View();
+            _view = new Page2View();
         }
         else
         {
-            view = new IntervalTimerListView();
+            _view = new IntervalTimerListView();
         }
 
-        return view;
+		Ui.switchToView( _view, getDelegate(), transition );
+        
+        return _view;
     }
 
-    function getDelegate(_page)
+    function getDelegate()
     {
-        var delegate = new IntervalTimerDelegate( _page );
+        var delegate = new IntervalTimerDelegate( _page, _view, _workout );
         return delegate;
     }    
 }

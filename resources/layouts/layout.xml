@@ -7,15 +7,22 @@
 	</layout>
 	<layout id="IntervalStepLayout">
 		<drawable id="MainBackground" />
-		<label id="IntervalTitle" text="Warm-up" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="10" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
-		<label id="Until" text="Until" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="50" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
-		<label id="IntervalLength" text="0.00" justification="Gfx.TEXT_JUSTIFY_LEFT" x="10" y="100" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
-		<label id="IntervalLengthUnit" text="Km" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="150" y="100" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalName" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="10" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
+		<label id="Until" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="40" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalLength" text="" justification="Gfx.TEXT_JUSTIFY_LEFT" x="20" y="60" font="Gfx.FONT_LARGE" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalLengthUnit" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="150" y="60" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
+		
+		<drawable id="divider95" />
+		
+		<label id="NextIntervalName" text="Run Easy" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="100" font="Gfx.FONT_SMALL" color="Gfx.COLOR_LT_GRAY" />
+		<label id="NextUntil" text="For" justification="Gfx.TEXT_JUSTIFY_LEFT" x="10" y="125" font="Gfx.FONT_SMALL" color="Gfx.COLOR_LT_GRAY" />
+		<label id="NextIntervalLength" text="500" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="100" y="125" font="Gfx.FONT_SMALL" color="Gfx.COLOR_LT_GRAY" />
+		<label id="NextIntervalLengthUnit" text="m" justification="Gfx.TEXT_JUSTIFY_LEFT" x="125" y="125" font="Gfx.FONT_SMALL" color="Gfx.COLOR_LT_GRAY" />
 	</layout>
 	<layout id="Page2Layout">
 		<drawable id="MainBackground" />
-		<label id="Page2Distance" text="Distance" justification="Gfx.TEXT_JUSTIFY_LEFT" x="10" y="10" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
-		<label id="Page2Time" text="Time" justification="Gfx.TEXT_JUSTIFY_LEFT" x="10" y="65" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
-		<label id="Page2Pace" text="Pace" justification="Gfx.TEXT_JUSTIFY_LEFT" x="10" y="120" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="Page2Distance" text="Distance" justification="Gfx.TEXT_JUSTIFY_LEFT" x="25" y="10" font="Gfx.FONT_LARGE" color="Gfx.COLOR_BLACK" />
+		<label id="Page2Time" text="Time" justification="Gfx.TEXT_JUSTIFY_LEFT" x="25" y="65" font="Gfx.FONT_LARGE" color="Gfx.COLOR_BLACK" />
+		<label id="Page2Pace" text="Pace" justification="Gfx.TEXT_JUSTIFY_LEFT" x="25" y="120" font="Gfx.FONT_LARGE" color="Gfx.COLOR_BLACK" />
 	</layout>
 </resources>
