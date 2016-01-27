@@ -30,6 +30,11 @@ class IntervalStepBaseModel
 	function onStart()
 	{
 	}
+	
+	function getNextStepInfo()
+	{
+		return null;
+	}
 }
 
 // A simple interval step which ends when the lap (back) button is pushed.
@@ -127,6 +132,7 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 		workStep = workIntervalDistance;
 		IntervalStepBaseModel.initialize( stepName, stepPerformanceTarget, stepDoneCallback );
 	}
+
 }
 
 // A repeater step which allows a set of interval steps to be repeated a specified number of times.
@@ -145,7 +151,7 @@ class IntervalRepeatModel extends IntervalStepBaseModel
 	function initialize( intervalRepeatCount, numberOfSteps, stepName, stepPerformanceTarget, stepDoneCallback )
 	{
 		repeatCount = intervalRepeatCount;
-		currentRepeat = 1;
+		currentRepeat = 0;
 		currentStepId = 0;
 		stepCount = numberOfSteps;
 		intervalSteps = new [numberOfSteps];
@@ -155,6 +161,7 @@ class IntervalRepeatModel extends IntervalStepBaseModel
 	function onStart()
 	{
 		System.println ("Repeat Interval Started " + name);
+		currentRepeat = 1;
 		intervalSteps[currentStepId].onStart();
 	}
 
@@ -194,6 +201,54 @@ class IntervalRepeatModel extends IntervalStepBaseModel
 		return intervalSteps[currentStepId].getCurrentStepInfo();
 	}
 	
+	function getNextStepInfo()
+	{
+		var nextStepInfo;
+		
+		// if this repeat hasn't started yet, then the next step is the first step
+		if ( currentRepeat == 0 )
+		{
+			nextStepInfo = intervalSteps[0].getCurrentStepInfo();
+		} // if the step we're on within the current repeat is within repeat set, then check the next step	
+		else if ( currentStepId < stepCount - 1 )
+		{
+			// Ask the current step if it can return next step info (this would be the case if the next step was a repeater or an onTime/onDistance)
+			nextStepInfo = intervalSteps[currentStepId].getNextStepInfo();
+			
+			// If the current step can't return next step info, then ask the next step info to the next step
+			if ( nextStepInfo == null )
+			{
+				nextStepInfo = intervalSteps[currentStepId + 1].getNextStepInfo();
+				
+				// if the next step can't return next step info, then return the current step info for the next step
+				if ( nextStepInfo == null )
+				{
+					nextStepInfo = intervalSteps[currentStepId + 1].getCurrentStepInfo();
+
+				}
+			}
+			
+		} // otherwise, if our current repeat is with the total repeats, then increment and start a new repeat
+		else if ( currentRepeat < repeatCount )
+		{
+			// Ask the first step if it can return next step info (this would be the case if the first step was a repeater or an onTime/onDistance)
+			nextStepInfo = intervalSteps[0].getNextStepInfo();
+			
+			// If the first step can't return next step info, then set the next step info to the next step
+			if ( nextStepInfo == null )
+			{
+				nextStepInfo = intervalSteps[0].getCurrentStepInfo();
+			}
+		}
+		else
+		{
+			// the next step isn't here, need to go up a level
+			nextStepInfo = null;
+		}
+		
+		return nextStepInfo;
+	
+	}
 }
 
 // The top level collection of the workout
@@ -227,7 +282,6 @@ class Workout
 	// Callback called by a child step when it finishes
 	function onDone()
 	{
-		System.println( "...Step Done..." );
 		
 		if ( currentStepId < totalSteps - 1 )
 		{
@@ -236,7 +290,7 @@ class Workout
 		}
 		else
 		{
-			System.println( "Workout Complete!" );
+			currentStepId = currentStepId + 1;
 		}
 	}
 	
@@ -247,7 +301,51 @@ class Workout
 	
 	function getCurrentStepInfo()
 	{
-		return workoutSteps[currentStepId].getCurrentStepInfo();
+		if ( currentStepId < totalSteps )
+		{
+			return workoutSteps[currentStepId].getCurrentStepInfo();
+		}
+		else
+		{
+			return {"name" => "Workout Complete!", "until" => "", "type" => WORKOUT };
+		}
+	}
+	
+	function getNextStepInfo()
+	{
+		var nextStepInfo;
+		
+		// if the step we're on within the workout set, then check the next step		
+		if ( currentStepId < totalSteps - 1 )
+		{
+			// Ask the current step if it can return next step info (this would be the case if the next step was a repeater or an onTime/onDistance)
+			nextStepInfo = workoutSteps[currentStepId].getNextStepInfo();
+			
+			// If the current step can't return next step info, then ask the next step info to the next step
+			if ( nextStepInfo == null )
+			{
+				nextStepInfo = workoutSteps[currentStepId + 1].getNextStepInfo();
+				
+				// if the next step can't return next step info, then return the current step info for the next step
+				if ( nextStepInfo == null )
+				{
+					nextStepInfo = workoutSteps[currentStepId + 1].getCurrentStepInfo();
+				}
+			}
+			
+		} // otherwise, if our current repeat is with the total repeats, then increment and start a new repeat
+		else if ( currentStepId < totalSteps )
+		{
+			// the next step is the finish
+			nextStepInfo = {"name" => "Workout Complete!", "until" => "", "type" => WORKOUT };
+		}
+		else
+		{
+			// no more steps
+			nextStepInfo = null;
+		}
+		
+		return nextStepInfo;
 	}
 }
 
