@@ -2,6 +2,10 @@ using Toybox.ActivityRecording;
 using Toybox.Activity;
 using Toybox.Lang;
 
+/*
+
+*/
+
 enum
 {
 	WORKOUT,
@@ -102,9 +106,7 @@ class LapIntervalModel extends IntervalStepBaseModel
 	
 	function getCurrentStepInfo()
 	{
-		var stepId = repeats.getStepId();
-		var count = repeats.getCount();
-		return { "name" => name, "until" => "Lap Button", "type" => STEP_LAP, "repeatStep" => stepId, "repeatTotal" => count };
+		return { :interval_name => name, :interval_duration => "Lap Button", :interval_type => STEP_LAP, :interval_repeat_step => repeats.getStepId(), :interval_repeat_count => repeats.getCount() };
 	}
 
 }
@@ -188,8 +190,8 @@ class TimeIntervalModel extends IntervalStepBaseModel
 		{
 			remainingDuration = duration / 1000;
 		}
-		
-		return {"name" => name, "until" => remainingDuration, "type" => STEP_TIME, "repeatStep" => repeats.getStepId(), "repeatTotal" => repeats.getCount() };
+
+		return { :interval_name => name, :interval_duration => remainingDuration, :interval_type => STEP_TIME, :interval_repeat_step => repeats.getStepId(), :interval_repeat_count => repeats.getCount() };
 	}
 
 }
@@ -406,7 +408,7 @@ class Workout
 		}
 		else
 		{
-			return {"name" => "Workout Complete!", "until" => "", "type" => WORKOUT };
+			return { :interval_name => "Workout Complete!", :interval_duration => "", :interval_type => WORKOUT };
 		}
 	}
 	
@@ -436,7 +438,7 @@ class Workout
 		else if ( currentStepId < totalSteps )
 		{
 			// the next step is the finish
-			nextStepInfo = {"name" => "Workout Complete!", "until" => "", "type" => WORKOUT };
+			nextStepInfo = { :interval_name => "Workout Complete!", :interval_duration => "", :interval_type => WORKOUT };
 		}
 		else
 		{

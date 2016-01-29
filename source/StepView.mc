@@ -28,15 +28,15 @@ class StepView extends Ui.View
     	stepInfo = _workout.getCurrentStepInfo(); 	
     	nextStepInfo = _workout.getNextStepInfo();
         
-        if ( stepInfo["type"] == STEP_LAP )
+        if ( stepInfo[ :interval_type ] == STEP_LAP )
         {
         	lapStepView( dc, stepInfo );
         }
-        else if ( stepInfo["type"] == STEP_TIME )
+        else if ( stepInfo[ :interval_type ] == STEP_TIME )
         {
         	timeStepView( dc, stepInfo );
         }
-        else if ( stepInfo["type"] == WORKOUT )
+        else if ( stepInfo[ :interval_type ] == WORKOUT )
         {
         	completeStepView( dc, stepInfo );
         }
@@ -48,15 +48,15 @@ class StepView extends Ui.View
         {
         	clearNextStepView( dc );
         }
-        else if ( nextStepInfo["type"] == STEP_LAP )
+        else if ( nextStepInfo[ :interval_type ] == STEP_LAP )
         {
         	lapNextStepView( dc, nextStepInfo );
         }
-        else if ( nextStepInfo["type"] == STEP_TIME )
+        else if ( nextStepInfo[ :interval_type ] == STEP_TIME )
         {
         	timeNextStepView( dc, nextStepInfo );
         }
-        else if ( nextStepInfo["type"] == WORKOUT )
+        else if ( nextStepInfo[ :interval_type ] == WORKOUT )
         {
         	completeNextStepView( dc, nextStepInfo );
         }
@@ -71,58 +71,149 @@ class StepView extends Ui.View
         
     }
 
+	function setField ( dc, drawableId, text )
+	{
+        var drawable;
+        
+        //set the interval name
+        drawable = View.findDrawableById( drawableId );
+        drawable.setText( text );
+        drawable.draw(dc);
+	}
+	
+	function setCurrentStep ( dc, intervalName, intervalUntilText, intervalLength, intervalLengthUnit, intervalRepeatStep, intervalRepeatDivider, intervalRepeatCount )
+	{
+        
+        //set the interval name
+		setField( dc, "IntervalName", intervalName );
+        
+        //set the until / for
+		setField( dc, "Until", intervalUntilText );
+        
+        //set the interval length
+		setField( dc, "IntervalLength", intervalLength );
+        
+        //set the interval units
+		setField( dc, "IntervalLengthUnit", intervalLengthUnit );
+        
+        //set the interval repeat step
+		setField( dc, "IntervalRepeatStep", intervalRepeatStep );
+        
+        //set the interval repeat divider
+		setField( dc, "IntervalRepeatDivider", intervalRepeatDivider );
+        
+        //set the interval repeat count
+		setField( dc, "IntervalRepeatCount", intervalRepeatCount );
+	}
+	
+	function setNextStep ( dc, intervalName, intervalUntilText, intervalLength, intervalLengthUnit, intervalRepeatStep, intervalRepeatDivider, intervalRepeatCount )
+	{
+        
+        //set the interval name
+		setField( dc, "NextIntervalName", intervalName );
+        
+        //set the until / for
+		setField( dc, "NextUntil", intervalUntilText );
+        
+        //set the interval length
+		setField( dc, "NextIntervalLength", intervalLength );
+        
+        //set the interval units
+		setField( dc, "NextIntervalLengthUnit", intervalLengthUnit );
+        
+        //set the interval repeat step
+		setField( dc, "NextIntervalRepeatStep", intervalRepeatStep );
+        
+        //set the interval repeat divider
+		setField( dc, "NextIntervalRepeatDivider", intervalRepeatDivider );
+        
+        //set the interval repeat count
+		setField( dc, "NextIntervalRepeatCount", intervalRepeatCount );
+	}
+	
 	function lapStepView ( dc, stepInfo )
 	{
-     	var intervalLengthDrawable;
-    	var intervalLengthUnitDrawable;
-    	var intervalName = stepInfo["name"];
+    	var intervalName = stepInfo[ :interval_name ];
     	var intervalUntilText = "Until";
     	var intervalLength = "Lap Button";
     	var intervalLengthUnit = "";
-        
-        //set the interval name
-        intervalLengthDrawable = View.findDrawableById("IntervalName");
-        intervalLengthDrawable.setText( intervalName );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the until / for
-        intervalLengthDrawable = View.findDrawableById("Until");
-        intervalLengthDrawable.setText( intervalUntilText );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval length
-        intervalLengthDrawable = View.findDrawableById("IntervalLength");
-        intervalLengthDrawable.setText( intervalLength );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval units
-        intervalLengthUnitDrawable = View.findDrawableById("IntervalLengthUnit");
-        intervalLengthUnitDrawable.setText( intervalLengthUnit );
-        intervalLengthUnitDrawable.draw(dc);
+    	var intervalRepeatStep;
+    	var intervalRepeatDivider;
+    	var intervalRepeatCount;
+    	
+    	if ( stepInfo[ :interval_repeat_step ] > 0 )
+    	{
+    		intervalRepeatStep = stepInfo[ :interval_repeat_step ].toString();
+    		intervalRepeatDivider = "/";
+    		intervalRepeatCount = stepInfo[ :interval_repeat_count ].toString();
+    	}
+    	else
+    	{
+    		intervalRepeatStep = "";
+    		intervalRepeatDivider = "";
+    		intervalRepeatCount = "";
+    	}
+
+		setCurrentStep( dc, intervalName, intervalUntilText, intervalLength, intervalLengthUnit, intervalRepeatStep, intervalRepeatDivider, intervalRepeatCount );
 	}
 
 	function timeStepView ( dc, stepInfo )
 	{
 		
-     	var intervalLengthDrawable;
-    	var intervalLengthUnitDrawable;
-    	var intervalName = stepInfo["name"];
+    	var intervalName = stepInfo[ :interval_name ];
     	var intervalUntilText = "For";
-    	var intervalLength = stepInfo["until"].toString();
-    	var intervalLengthUnit = "sec";
-    	
-    	var intervalRepeatStepDrawable;
-    	var intervalRepeatDividerDrawable;
-    	var intervalRepeatCountDrawable;
+    	var intervalLength = stepInfo[ :interval_duration ].toString();
+    	var intervalLengthUnit = "";
     	var intervalRepeatStep;
     	var intervalRepeatDivider;
     	var intervalRepeatCount;
     	
-    	if ( stepInfo["repeatStep"] > 0 )
+    	if ( stepInfo[ :interval_repeat_step ] > 0 )
     	{
-    		intervalRepeatStep = stepInfo["repeatStep"].toString();
+    		intervalRepeatStep = stepInfo[ :interval_repeat_step ].toString();
     		intervalRepeatDivider = "/";
-    		intervalRepeatCount = stepInfo["repeatTotal"].toString();
+    		intervalRepeatCount = stepInfo[ :interval_repeat_count ].toString();
+    	}
+    	else
+    	{
+    		intervalRepeatStep = "";
+    		intervalRepeatDivider = "";
+    		intervalRepeatCount = "";
+    	}
+
+		setCurrentStep( dc, intervalName, intervalUntilText, intervalLength, intervalLengthUnit, intervalRepeatStep, intervalRepeatDivider, intervalRepeatCount );
+
+	}
+
+	function completeStepView ( dc, stepInfo )
+	{
+    	var intervalName = stepInfo[ :interval_name ];
+    	var intervalUntilText = "";
+    	var intervalLength = "";
+    	var intervalLengthUnit = "";
+     	var intervalRepeatStep = "";
+    	var intervalRepeatDivider = "";
+    	var intervalRepeatCount = "";
+
+		setCurrentStep( dc, intervalName, intervalUntilText, intervalLength, intervalLengthUnit, intervalRepeatStep, intervalRepeatDivider, intervalRepeatCount );
+	}
+	
+
+	function lapNextStepView ( dc, stepInfo )
+	{
+    	var intervalName = stepInfo[ :interval_name ];
+    	var intervalUntilText = "Until";
+    	var intervalLength = "Lap Button";
+    	var intervalLengthUnit = "";
+     	var intervalRepeatStep;
+    	var intervalRepeatDivider;
+    	var intervalRepeatCount;
+    	
+    	if ( stepInfo[ :interval_repeat_step ] > 0 )
+    	{
+    		intervalRepeatStep = stepInfo[ :interval_repeat_step ].toString();
+    		intervalRepeatDivider = "/";
+    		intervalRepeatCount = stepInfo[ :interval_repeat_count ].toString();
     	}
     	else
     	{
@@ -131,192 +222,59 @@ class StepView extends Ui.View
     		intervalRepeatCount = "";
     	}
         
-        //set the interval name
-        intervalLengthDrawable = View.findDrawableById("IntervalName");
-        intervalLengthDrawable.setText( intervalName );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the until / for
-        intervalLengthDrawable = View.findDrawableById("Until");
-        intervalLengthDrawable.setText( intervalUntilText );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval length
-        intervalLengthDrawable = View.findDrawableById("IntervalLength");
-        intervalLengthDrawable.setText( intervalLength );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval units
-        intervalLengthUnitDrawable = View.findDrawableById("IntervalLengthUnit");
-        intervalLengthUnitDrawable.setText( intervalLengthUnit );
-        intervalLengthUnitDrawable.draw(dc);
-        
-        //set the interval repeat step
-        intervalRepeatStepDrawable = View.findDrawableById("IntervalRepeatStep");
-        intervalRepeatStepDrawable.setText( intervalRepeatStep );
-        intervalRepeatStepDrawable.draw(dc);
-        
-        //set the interval repeat divider
-        intervalRepeatDividerDrawable = View.findDrawableById("IntervalRepeatDivider");
-        intervalRepeatDividerDrawable.setText( intervalRepeatDivider );
-        intervalRepeatDividerDrawable.draw(dc);
-        
-        //set the interval repeat count
-        intervalRepeatCountDrawable = View.findDrawableById("IntervalRepeatCount");
-        intervalRepeatCountDrawable.setText( intervalRepeatCount );
-        intervalRepeatCountDrawable.draw(dc);
-
-	}
-
-	function completeStepView ( dc, stepInfo )
-	{
-     	var intervalLengthDrawable;
-    	var intervalLengthUnitDrawable;
-    	var intervalName = stepInfo["name"];
-    	var intervalUntilText = "";
-    	var intervalLength = "";
-    	var intervalLengthUnit = "";
-        
-        //set the interval name
-        intervalLengthDrawable = View.findDrawableById("IntervalName");
-        intervalLengthDrawable.setText( intervalName );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the until / for
-        intervalLengthDrawable = View.findDrawableById("Until");
-        intervalLengthDrawable.setText( intervalUntilText );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval length
-        intervalLengthDrawable = View.findDrawableById("IntervalLength");
-        intervalLengthDrawable.setText( intervalLength );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval units
-        intervalLengthUnitDrawable = View.findDrawableById("IntervalLengthUnit");
-        intervalLengthUnitDrawable.setText( intervalLengthUnit );
-        intervalLengthUnitDrawable.draw(dc);
-	}
-	
-
-	function lapNextStepView ( dc, stepInfo )
-	{
-     	var intervalLengthDrawable;
-    	var intervalLengthUnitDrawable;
-    	var intervalName = stepInfo["name"];
-    	var intervalUntilText = "Until";
-    	var intervalLength = "Lap Button";
-    	var intervalLengthUnit = "";
-        
-        //set the interval name
-        intervalLengthDrawable = View.findDrawableById("NextIntervalName");
-        intervalLengthDrawable.setText( intervalName );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the until / for
-        intervalLengthDrawable = View.findDrawableById("NextUntil");
-        intervalLengthDrawable.setText( intervalUntilText );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval length
-        intervalLengthDrawable = View.findDrawableById("NextIntervalLength");
-        intervalLengthDrawable.setText( intervalLength );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval units
-        intervalLengthUnitDrawable = View.findDrawableById("NextIntervalLengthUnit");
-        intervalLengthUnitDrawable.setText( intervalLengthUnit );
-        intervalLengthUnitDrawable.draw(dc);
+		setNextStep ( dc, intervalName, intervalUntilText, intervalLength, intervalLengthUnit, intervalRepeatStep, intervalRepeatDivider, intervalRepeatCount )	;
 	}
 
 	function timeNextStepView ( dc, stepInfo )
 	{
-     	var intervalLengthDrawable;
-    	var intervalLengthUnitDrawable;
-     	var intervalName = stepInfo["name"];
+     	var intervalName = stepInfo[ :interval_name ];
     	var intervalUntilText = "For";
-    	var intervalLength = stepInfo["until"].toString();
-    	var intervalLengthUnit = "sec";
+    	var intervalLength = stepInfo[ :interval_duration ].toString();
+    	var intervalLengthUnit = "";
+     	var intervalRepeatStep;
+    	var intervalRepeatDivider;
+    	var intervalRepeatCount;
+    	
+    	if ( stepInfo[ :interval_repeat_step ] > 0 )
+    	{
+    		intervalRepeatStep = stepInfo[ :interval_repeat_step ].toString();
+    		intervalRepeatDivider = "/";
+    		intervalRepeatCount = stepInfo[ :interval_repeat_count ].toString();
+    	}
+    	else
+    	{
+    		intervalRepeatStep = "";
+    		intervalRepeatDivider = "";
+    		intervalRepeatCount = "";
+    	}
         
-        //set the interval name
-        intervalLengthDrawable = View.findDrawableById("NextIntervalName");
-        intervalLengthDrawable.setText( intervalName );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the until / for
-        intervalLengthDrawable = View.findDrawableById("NextUntil");
-        intervalLengthDrawable.setText( intervalUntilText );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval length
-        intervalLengthDrawable = View.findDrawableById("NextIntervalLength");
-        intervalLengthDrawable.setText( intervalLength );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval units
-        intervalLengthUnitDrawable = View.findDrawableById("NextIntervalLengthUnit");
-        intervalLengthUnitDrawable.setText( intervalLengthUnit );
-        intervalLengthUnitDrawable.draw(dc);
+		setNextStep ( dc, intervalName, intervalUntilText, intervalLength, intervalLengthUnit, intervalRepeatStep, intervalRepeatDivider, intervalRepeatCount );
 	}
 
 	function completeNextStepView ( dc, stepInfo )
 	{
-     	var intervalLengthDrawable;
-    	var intervalLengthUnitDrawable;
-     	var intervalName = stepInfo["name"];
+     	var intervalName = stepInfo[ :interval_name ];
     	var intervalUntilText = "";
     	var intervalLength = "";
     	var intervalLengthUnit = "";
-        
-        //set the interval name
-        intervalLengthDrawable = View.findDrawableById("NextIntervalName");
-        intervalLengthDrawable.setText( intervalName );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the until / for
-        intervalLengthDrawable = View.findDrawableById("NextUntil");
-        intervalLengthDrawable.setText( intervalUntilText );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval length
-        intervalLengthDrawable = View.findDrawableById("NextIntervalLength");
-        intervalLengthDrawable.setText( intervalLength );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval units
-        intervalLengthUnitDrawable = View.findDrawableById("NextIntervalLengthUnit");
-        intervalLengthUnitDrawable.setText( intervalLengthUnit );
-        intervalLengthUnitDrawable.draw(dc);
+     	var intervalRepeatStep = "";
+    	var intervalRepeatDivider = "";
+    	var intervalRepeatCount = "";
+         
+		setNextStep ( dc, intervalName, intervalUntilText, intervalLength, intervalLengthUnit, intervalRepeatStep, intervalRepeatDivider, intervalRepeatCount );
 	}
 
 	function clearNextStepView ( dc )
 	{
-     	var intervalLengthDrawable;
-    	var intervalLengthUnitDrawable;
      	var intervalName = "";
     	var intervalUntilText = "";
     	var intervalLength = "";
     	var intervalLengthUnit = "";
+     	var intervalRepeatStep = "";
+    	var intervalRepeatDivider = "";
+    	var intervalRepeatCount = "";
         
-        //set the interval name
-        intervalLengthDrawable = View.findDrawableById("NextIntervalName");
-        intervalLengthDrawable.setText( intervalName );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the until / for
-        intervalLengthDrawable = View.findDrawableById("NextUntil");
-        intervalLengthDrawable.setText( intervalUntilText );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval length
-        intervalLengthDrawable = View.findDrawableById("NextIntervalLength");
-        intervalLengthDrawable.setText( intervalLength );
-        intervalLengthDrawable.draw(dc);
-        
-        //set the interval units
-        intervalLengthUnitDrawable = View.findDrawableById("NextIntervalLengthUnit");
-        intervalLengthUnitDrawable.setText( intervalLengthUnit );
-        intervalLengthUnitDrawable.draw(dc);
+		setNextStep ( dc, intervalName, intervalUntilText, intervalLength, intervalLengthUnit, intervalRepeatStep, intervalRepeatDivider, intervalRepeatCount );
 	}
 	
 }

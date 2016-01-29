@@ -11,9 +11,9 @@
 		<label id="Until" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="40" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
 		<label id="IntervalLength" text="" justification="Gfx.TEXT_JUSTIFY_LEFT" x="20" y="60" font="Gfx.FONT_LARGE" color="Gfx.COLOR_BLACK" />
 		<label id="IntervalLengthUnit" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="100" y="60" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
-		<label id="IntervalRepeatStep" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="150" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
-		<label id="IntervalRepeatDivider" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="155" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
-		<label id="IntervalRepeatCount" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="160" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalRepeatStep" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="160" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalRepeatDivider" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="165" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalRepeatCount" text="" justification="Gfx.TEXT_JUSTIFY_LEFT" x="160" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
 		
 		<drawable id="divider95" />
 		
@@ -21,6 +21,9 @@
 		<label id="NextUntil" text="For" justification="Gfx.TEXT_JUSTIFY_LEFT" x="10" y="125" font="Gfx.FONT_SMALL" color="Gfx.COLOR_LT_GRAY" />
 		<label id="NextIntervalLength" text="500" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="100" y="125" font="Gfx.FONT_SMALL" color="Gfx.COLOR_LT_GRAY" />
 		<label id="NextIntervalLengthUnit" text="m" justification="Gfx.TEXT_JUSTIFY_LEFT" x="125" y="125" font="Gfx.FONT_SMALL" color="Gfx.COLOR_LT_GRAY" />
+		<label id="NextIntervalRepeatStep" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="170" y="125" font="Gfx.FONT_TINY" color="Gfx.COLOR_LT_GRAY" />
+		<label id="NextIntervalRepeatDivider" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="173" y="125" font="Gfx.FONT_TINY" color="Gfx.COLOR_LT_GRAY" />
+		<label id="NextIntervalRepeatCount" text="" justification="Gfx.TEXT_JUSTIFY_LEFT" x="176" y="125" font="Gfx.FONT_TINY" color="Gfx.COLOR_LT_GRAY" />
 	</layout>
 	<layout id="Page2Layout">
 		<drawable id="MainBackground" />
