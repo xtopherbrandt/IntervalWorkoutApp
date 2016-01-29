@@ -6,6 +6,7 @@
         </iq:products>
 
         <iq:permissions>
+        	<iq:uses-permission id="fit" />
         </iq:permissions>
 
         <iq:languages>

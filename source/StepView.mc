@@ -23,6 +23,7 @@ class StepView extends Ui.View
     {
     	var stepInfo;
     	var nextStepInfo;
+    	var activity;
     	
     	stepInfo = _workout.getCurrentStepInfo(); 	
     	nextStepInfo = _workout.getNextStepInfo();
@@ -102,12 +103,33 @@ class StepView extends Ui.View
 
 	function timeStepView ( dc, stepInfo )
 	{
+		
      	var intervalLengthDrawable;
     	var intervalLengthUnitDrawable;
     	var intervalName = stepInfo["name"];
     	var intervalUntilText = "For";
     	var intervalLength = stepInfo["until"].toString();
     	var intervalLengthUnit = "sec";
+    	
+    	var intervalRepeatStepDrawable;
+    	var intervalRepeatDividerDrawable;
+    	var intervalRepeatCountDrawable;
+    	var intervalRepeatStep;
+    	var intervalRepeatDivider;
+    	var intervalRepeatCount;
+    	
+    	if ( stepInfo["repeatStep"] > 0 )
+    	{
+    		intervalRepeatStep = stepInfo["repeatStep"].toString();
+    		intervalRepeatDivider = "/";
+    		intervalRepeatCount = stepInfo["repeatTotal"].toString();
+    	}
+    	else
+    	{
+    		intervalRepeatStep = "";
+    		intervalRepeatDivider = "";
+    		intervalRepeatCount = "";
+    	}
         
         //set the interval name
         intervalLengthDrawable = View.findDrawableById("IntervalName");
@@ -128,6 +150,22 @@ class StepView extends Ui.View
         intervalLengthUnitDrawable = View.findDrawableById("IntervalLengthUnit");
         intervalLengthUnitDrawable.setText( intervalLengthUnit );
         intervalLengthUnitDrawable.draw(dc);
+        
+        //set the interval repeat step
+        intervalRepeatStepDrawable = View.findDrawableById("IntervalRepeatStep");
+        intervalRepeatStepDrawable.setText( intervalRepeatStep );
+        intervalRepeatStepDrawable.draw(dc);
+        
+        //set the interval repeat divider
+        intervalRepeatDividerDrawable = View.findDrawableById("IntervalRepeatDivider");
+        intervalRepeatDividerDrawable.setText( intervalRepeatDivider );
+        intervalRepeatDividerDrawable.draw(dc);
+        
+        //set the interval repeat count
+        intervalRepeatCountDrawable = View.findDrawableById("IntervalRepeatCount");
+        intervalRepeatCountDrawable.setText( intervalRepeatCount );
+        intervalRepeatCountDrawable.draw(dc);
+
 	}
 
 	function completeStepView ( dc, stepInfo )

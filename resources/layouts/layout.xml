@@ -10,7 +10,10 @@
 		<label id="IntervalName" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="10" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
 		<label id="Until" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="40" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
 		<label id="IntervalLength" text="" justification="Gfx.TEXT_JUSTIFY_LEFT" x="20" y="60" font="Gfx.FONT_LARGE" color="Gfx.COLOR_BLACK" />
-		<label id="IntervalLengthUnit" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="150" y="60" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalLengthUnit" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="100" y="60" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalRepeatStep" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="150" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalRepeatDivider" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="155" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalRepeatCount" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="160" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
 		
 		<drawable id="divider95" />
 		
