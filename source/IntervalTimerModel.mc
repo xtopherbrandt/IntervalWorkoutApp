@@ -22,15 +22,24 @@ enum
 class IntervalStepBaseModel 
 {
 	var name;
+	var intervalType;
 	var performanceTarget; //string description for now, eventually describe in code
 	var doneCallback;
 	var repeats;
+	var initialDuration;
+	var remainingDuration;	// a numeric representation of the remaining duration. Each supertype is responsible for providing a string representation
+	var startActivityInfo;
+	var endActivityInfo;
 	
-	function initialize( stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo )
+	function initialize( stepName, stepType, intervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo )
 	{
 		name = stepName;
+		intervalType = stepType;
 		performanceTarget = stepPerformanceTarget;
 		doneCallback = stepDoneCallback;
+		initialDuration = intervalDuration;
+		remainingDuration = intervalDuration;
+		
 		if ( repeatInfo != null )
 		{
 			repeats = repeatInfo;
@@ -42,6 +51,19 @@ class IntervalStepBaseModel
 	}
 	
 	function onStart()
+	{
+	}
+	
+	function timerUpdate()
+	{
+	}
+	
+	function getRemainingDuration()
+	{
+		return "";
+	}
+	
+	function getChildStep()
 	{
 	}
 	
@@ -90,7 +112,7 @@ class LapIntervalModel extends IntervalStepBaseModel
 	
 	function initialize( stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo )
 	{
-		IntervalStepBaseModel.initialize( stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo );
+		IntervalStepBaseModel.initialize( stepName, STEP_LAP, 0, stepPerformanceTarget, stepDoneCallback, repeatInfo );
 	}
 	
 	function onStart()
@@ -103,11 +125,6 @@ class LapIntervalModel extends IntervalStepBaseModel
 		// Call the done callback
 		doneCallback.invoke();
 	}
-	
-	function getCurrentStepInfo()
-	{
-		return { :interval_name => name, :interval_duration => "Lap Button", :interval_type => STEP_LAP, :interval_repeat_step => repeats.getStepId(), :interval_repeat_count => repeats.getCount() };
-	}
 
 }
 
@@ -115,12 +132,10 @@ class LapIntervalModel extends IntervalStepBaseModel
 // For example, run for 1Km.
 class DistanceIntervalModel extends IntervalStepBaseModel
 {
-	var distance;
 	
 	function initialize( intervalDistance, stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo )
 	{
-		distance = intervalDistance;
-		IntervalStepBaseModel.initialize( stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo );
+		IntervalStepBaseModel.initialize( stepName, STEP_DISTANCE, intervalDistance, stepPerformanceTarget, stepDoneCallback, repeatInfo );
 	}
 	
 	function onStart()
@@ -139,15 +154,10 @@ class DistanceIntervalModel extends IntervalStepBaseModel
 // For example, recover for 60 seconds.
 class TimeIntervalModel extends IntervalStepBaseModel
 {
-	var duration;
-	var currentCount;
-	var startActivityInfo;
-	var endActivityInfo;
 	
 	function initialize(  intervalDuration, stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo )
 	{
-		duration = intervalDuration;
-		IntervalStepBaseModel.initialize( stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo );
+		IntervalStepBaseModel.initialize( stepName, STEP_TIME, intervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo );
 		startActivityInfo = null;
 		endActivityInfo = null;
 	}
@@ -162,6 +172,11 @@ class TimeIntervalModel extends IntervalStepBaseModel
 
 	function onLap()
 	{
+		stepComplete();
+	}
+	
+	function stepComplete()
+	{
 		// Take a snapshot of the activity at the end of this step
 		endActivityInfo = Activity.getActivityInfo();
 		
@@ -169,10 +184,9 @@ class TimeIntervalModel extends IntervalStepBaseModel
 		doneCallback.invoke();
 	}
 	
-	function getCurrentStepInfo()
+	function timerUpdate()
 	{
 		var currentActivityInfo;
-		var remainingDuration;
 		
 		currentActivityInfo = Activity.getActivityInfo();
 
@@ -180,7 +194,7 @@ class TimeIntervalModel extends IntervalStepBaseModel
 		if ( startActivityInfo != null && startActivityInfo.elapsedTime != null && endActivityInfo == null )
 		{
 			// Calculate the remaining number of seconds in this step
-			remainingDuration = ((startActivityInfo.elapsedTime + duration) - currentActivityInfo.elapsedTime) / 1000;
+			remainingDuration = ((startActivityInfo.elapsedTime + initialDuration) - currentActivityInfo.elapsedTime);
 		}
 		else if ( endActivityInfo != null )
 		{
@@ -188,10 +202,31 @@ class TimeIntervalModel extends IntervalStepBaseModel
 		}
 		else
 		{
-			remainingDuration = duration / 1000;
+			remainingDuration = initialDuration ;
 		}
-
-		return { :interval_name => name, :interval_duration => remainingDuration, :interval_type => STEP_TIME, :interval_repeat_step => repeats.getStepId(), :interval_repeat_count => repeats.getCount() };
+		
+		// Check if we're done
+		if ( remainingDuration <= 0 )
+		{
+			stepComplete();
+		}
+	}
+	
+	function getRemainingDuration()
+	{
+		var hours;
+		var minutes;
+		var seconds;
+		var secString;
+		var minString;
+		
+		hours = 0;
+		minutes = remainingDuration / 60000;
+		seconds = ( remainingDuration % 60000 ) / 1000;
+		secString = seconds > 9 ? seconds.toString() : format( "0$1$", [ seconds.toString() ]);
+		minString = minutes > 9 ? minutes.toString() : format( "0$1$", [ minutes.toString() ] );
+		
+		return format( "$1$:$2$", [ minString , secString ] );
 	}
 
 }
@@ -207,9 +242,27 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 	{
 		totalTime = totalIntervalDuration;
 		workStep = workIntervalDistance;
-		IntervalStepBaseModel.initialize( stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo );
+		IntervalStepBaseModel.initialize( stepName, SET_ON_TIME, totalIntervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo );
 	}
 
+	// Currently only returning the work step, needs to return rest step info once that is fleshed out.
+	function getChildStep()
+	{
+		if ( workStep != null )
+		{
+			if ( workStep.getChildStep() != null )
+			{
+				return workStep.getChildStep();
+			}
+		}
+		
+		return null;
+	}
+	
+	function getNextStepInfo()
+	{
+		
+	}
 }
 
 // A repeater step which allows a set of interval steps to be repeated a specified number of times.
@@ -273,11 +326,6 @@ class IntervalRepeatModel extends IntervalStepBaseModel
 		return method( :onDone );
 	}
 	
-	function getCurrentStepInfo()
-	{
-		return intervalSteps[currentStepId].getCurrentStepInfo();
-	}
-	
 	function getNextStepInfo()
 	{
 		var nextStepInfo;
@@ -285,7 +333,7 @@ class IntervalRepeatModel extends IntervalStepBaseModel
 		// if this repeat hasn't started yet, then the next step is the first step
 		if ( currentRepeat == 0 )
 		{
-			nextStepInfo = intervalSteps[0].getCurrentStepInfo();
+			nextStepInfo = intervalSteps[0];
 		} // if the step we're on within the current repeat is within repeat set, then check the next step	
 		else if ( currentStepId < stepCount - 1 )
 		{
@@ -295,12 +343,12 @@ class IntervalRepeatModel extends IntervalStepBaseModel
 			// If the current step can't return next step info, then ask the next step info to the next step
 			if ( nextStepInfo == null )
 			{
-				nextStepInfo = intervalSteps[currentStepId + 1].getNextStepInfo();
+				nextStepInfo = intervalSteps[currentStepId + 1].getChildStep();
 				
 				// if the next step can't return next step info, then return the current step info for the next step
 				if ( nextStepInfo == null )
 				{
-					nextStepInfo = intervalSteps[currentStepId + 1].getCurrentStepInfo();
+					nextStepInfo = intervalSteps[currentStepId + 1];
 
 				}
 			}
@@ -328,6 +376,14 @@ class IntervalRepeatModel extends IntervalStepBaseModel
 	}
 }
 
+class completeWorkoutModel extends IntervalStepBaseModel
+{
+	function initialize()
+	{
+		IntervalStepBaseModel.initialize( "Workout Complete", WORKOUT );
+	}
+}
+
 // The top level collection of the workout
 class Workout
 {
@@ -336,6 +392,7 @@ class Workout
 	var currentStepId;	// the array identity of the current step
 	var totalSteps;
 	hidden var _session;
+	hidden var _completeStep;
 	
 	function initialize( workoutName, topLevelStepCount )
 	{
@@ -344,16 +401,32 @@ class Workout
 		totalSteps = topLevelStepCount;
 		workoutSteps = new [ topLevelStepCount ];
 		_session = null;
+		_completeStep = new completeWorkoutModel();
 	}
 	
-	// the lap button always moves to the next interval step
-	function onLap()
+	function isRecording()
 	{
-		workoutSteps[ currentStepId ].onLap();
+        if( Toybox has :ActivityRecording ) 
+        {
+            if( ( _session != null ) && _session.isRecording() ) 
+            {
+            	return true;
+           	}
+        }
+        
+        return false;
 	}
 	
 	function onStart()
 	{
+		if ( isRecording() )
+		{
+            _session.stop();
+            _session.save();
+            _session = null;
+            System.println( "Was already recording. Recording stopped." );
+		}
+		
         if( Toybox has :ActivityRecording ) 
         {
             if( ( _session == null ) || ( _session.isRecording() == false ) ) {
@@ -361,14 +434,23 @@ class Workout
                 _session.start();
                 workoutSteps[currentStepId].onStart();
             }
-            else if( ( _session != null ) && _session.isRecording() ) 
-            {
-                _session.stop();
-                _session.save();
-                _session = null;
-                System.println( "Failed starting activity recording session" );
-            }
         }
+	}
+	
+	function onStop()
+	{
+		if ( isRecording() )
+		{
+            _session.stop();
+            _session.save();
+            _session = null;
+		}
+	}
+	
+	// the lap button always moves to the next interval step
+	function onLap()
+	{
+		workoutSteps[ currentStepId ].onLap();
 	}
 	
 	// Callback called by a child step when it finishes
@@ -395,21 +477,36 @@ class Workout
 		}
 	}
 	
-	function getDoneCallback()
-	{
-		return method( :onDone );
-	}
-	
-	function getCurrentStepInfo()
+	// periodic update of the workout to update the remaining duration of the current step and move to the next step when done
+	function timerUpdate()
 	{
 		if ( currentStepId < totalSteps )
 		{
-			return workoutSteps[currentStepId].getCurrentStepInfo();
+			workoutSteps[ currentStepId ].timerUpdate();
 		}
-		else
+	}
+	
+	function getChildStep()
+	{
+		if ( currentStepId < totalSteps )
 		{
-			return { :interval_name => "Workout Complete!", :interval_duration => "", :interval_type => WORKOUT };
+			if ( workoutSteps[currentStepId].getChildStep() == null )
+			{
+				return workoutSteps[currentStepId];
+			}
+			else
+			{
+				return workoutSteps[currentStepId].getChildStep();
+			}
+			
 		}
+		
+		return _completeStep;
+	}
+	
+	function getDoneCallback()
+	{
+		return method( :onDone );
 	}
 	
 	function getNextStepInfo()
@@ -425,12 +522,12 @@ class Workout
 			// If the current step can't return next step info, then ask the next step info to the next step
 			if ( nextStepInfo == null )
 			{
-				nextStepInfo = workoutSteps[currentStepId + 1].getNextStepInfo();
+				nextStepInfo = workoutSteps[currentStepId + 1].getChildStep();
 				
 				// if the next step can't return next step info, then return the current step info for the next step
 				if ( nextStepInfo == null )
 				{
-					nextStepInfo = workoutSteps[currentStepId + 1].getCurrentStepInfo();
+					nextStepInfo = workoutSteps[currentStepId + 1];
 				}
 			}
 			
@@ -438,7 +535,7 @@ class Workout
 		else if ( currentStepId < totalSteps )
 		{
 			// the next step is the finish
-			nextStepInfo = { :interval_name => "Workout Complete!", :interval_duration => "", :interval_type => WORKOUT };
+			nextStepInfo = _completeStep ;
 		}
 		else
 		{

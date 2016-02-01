@@ -14,6 +14,7 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
         _page = page;
         _workout = workout;
         _view = view;
+        startTimer();
         
     }
 
@@ -87,15 +88,14 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
 		
         if( key == KEY_ENTER || key == KEY_START )
         {
-        	if ( timersRunning )
+        	if ( _workout.isRecording() )
         	{
         		System.println ("Stop");
-            	timer1.stop();
-            	timersRunning = false;
+        		_workout.onStop();
             }
             else
             {
-                startTimer();
+        		System.println ("Start");
             	_workout.onStart();
             }
         }    	
@@ -105,7 +105,6 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
 
 	function startTimer()
 	{
-        System.println ("Start");
 
         timer1.start( method(:callback1), 500, true );
         
@@ -117,6 +116,8 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     {
    	
         count1 += 1;
+        
+        _workout.timerUpdate();
         
         Ui.requestUpdate();
     }

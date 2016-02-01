@@ -13,7 +13,7 @@
 		<label id="IntervalLengthUnit" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="100" y="60" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
 		<label id="IntervalRepeatStep" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="160" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
 		<label id="IntervalRepeatDivider" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="165" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
-		<label id="IntervalRepeatCount" text="" justification="Gfx.TEXT_JUSTIFY_LEFT" x="160" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalRepeatCount" text="" justification="Gfx.TEXT_JUSTIFY_LEFT" x="170" y="60" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
 		
 		<drawable id="divider95" />
 		
