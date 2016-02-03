@@ -3,7 +3,7 @@
 
     <string id="prompt">Click the menu button</string>
 
-    <string id="workout_1">Test Workout</string>
-    <string id="workout_2">Workout 2</string>
+    <string id="workout_1">Simple Repeats</string>
+    <string id="workout_2">On Time Repeats</string>
     <string id="workout_3">Workout 3</string>
 </strings>

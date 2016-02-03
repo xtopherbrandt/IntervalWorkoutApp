@@ -5,17 +5,18 @@ using Toybox.System as Sys;
 class IntervalTimerDelegate extends Ui.BehaviorDelegate
 {
 	hidden var _page;
-	hidden var _workout;
+	hidden var _workouts;
 	hidden var _view;
+	hidden var _workout;
 
-    function initialize( page, view, workout )
+    function initialize( page, view, workouts, workout )
     {
     	// initialize the page to -1 --> workout list page
         _page = page;
-        _workout = workout;
+        _workouts = workouts;
         _view = view;
         startTimer();
-        
+        _workout = workout;
     }
 
 	// Cycle through the pages after -1
@@ -63,11 +64,13 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
 			// Tap the first line
 			if ( evt.getCoordinates()[1] < 50 )
 			{
+				_workout = _workouts[ 0 ];
 				onNextPage();
 			}
 			else if ( evt.getCoordinates()[1] < 100 ) // Tap the second line
 			{
-				Sys.println ( "2nd line" );
+				_workout = _workouts[ 1 ];
+				onNextPage();
 			}
 			else if ( evt.getCoordinates()[1] > 100 ) // Tap the third line
 			{
@@ -78,7 +81,7 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
 		{
 			onNextPage();
 		}
-		
+
  		return true;
     }
     
@@ -117,7 +120,10 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
    	
         count1 += 1;
         
-        _workout.timerUpdate();
+        if ( _workout != null )
+        {
+        	_workout.timerUpdate();
+        }
         
         Ui.requestUpdate();
     }
@@ -149,7 +155,7 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
 
     function getDelegate()
     {
-        var delegate = new IntervalTimerDelegate( _page, _view, _workout );
+        var delegate = new IntervalTimerDelegate( _page, _view, _workouts, _workout );
         return delegate;
     }    
 }
