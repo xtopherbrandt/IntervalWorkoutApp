@@ -82,7 +82,8 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
 			}
 			else if ( evt.getCoordinates()[1] > 100 ) // Tap the third line
 			{
-				Sys.println ( "3rd line" );
+				_workout = _workouts[ 2 ];
+				onNextPage();
 			}
 		}
 		else

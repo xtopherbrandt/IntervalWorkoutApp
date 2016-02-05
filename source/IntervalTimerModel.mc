@@ -1,7 +1,7 @@
 using Toybox.ActivityRecording;
 using Toybox.Activity;
 using Toybox.Lang;
-
+using Toybox.Attention;
 /*
 
 */
@@ -36,6 +36,8 @@ class IntervalStepBaseModel
 	var initialDuration;
 	var remainingDuration;	// a numeric representation of the remaining duration. Each supertype is responsible for providing a string representation
 	var startActivityInfo;
+	hidden var _backlightTimer;
+	var backlightIsOn;
 	
 	function initialize( stepName, stepType, intervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo )
 	{
@@ -46,6 +48,8 @@ class IntervalStepBaseModel
 		initialDuration = intervalDuration;
 		remainingDuration = intervalDuration;
 		startActivityInfo = null;
+		_backlightTimer = new Timer.Timer();
+		backlightIsOn = false;
 		
 		if ( repeatInfo != null )
 		{
@@ -70,6 +74,29 @@ class IntervalStepBaseModel
 		
 	function onStart()
 	{
+		alert();
+	}
+	
+	function alert()
+	{
+		var vibrationPattern = new [1];
+		
+		if ( !backlightIsOn )
+		{
+			Attention.backlight( true );
+			_backlightTimer.start( method(:backlightOff), 5000, false );
+			backlightIsOn = true;
+		}
+		
+		vibrationPattern[0] = new Attention.VibeProfile( 50, 1000 );
+		
+		Attention.vibrate(vibrationPattern);
+	}
+	
+	function backlightOff ()
+	{
+		Attention.backlight( false );
+		backlightIsOn = false;
 	}
 	
 	function timerUpdate()
@@ -140,7 +167,7 @@ class LapIntervalModel extends IntervalStepBaseModel
 	
 	function onStart()
 	{
-		System.println ("Lap Interval Started " + name);
+		IntervalStepBaseModel.onStart();
 	}
 
 	function onLap()
@@ -156,19 +183,70 @@ class LapIntervalModel extends IntervalStepBaseModel
 class DistanceIntervalModel extends IntervalStepBaseModel
 {
 	
-	function initialize( intervalDistance, stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo )
+	function initialize(  intervalDuration, stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo )
 	{
-		IntervalStepBaseModel.initialize( stepName, STEP_DISTANCE, intervalDistance, stepPerformanceTarget, stepDoneCallback, repeatInfo );
+		IntervalStepBaseModel.initialize( stepName, STEP_DISTANCE, intervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo );
 	}
 	
 	function onStart()
 	{
+		// Take a snapshot of the activity at the start of the step
+		startActivityInfo = Activity.getActivityInfo();
+		IntervalStepBaseModel.onStart();
 	}
 
 	function onLap()
 	{
+		stepComplete();
+	}
+	
+	function stepComplete()
+	{
+		
 		// Call the done callback
 		doneCallback.invoke();
+	}
+	
+	function timerUpdate()
+	{
+		var currentActivityInfo;
+		
+		currentActivityInfo = Activity.getActivityInfo();
+		
+		// if the activity is running
+		if ( startActivityInfo != null && startActivityInfo.elapsedDistance != null && ( currentActivityInfo.elapsedDistance - startActivityInfo.elapsedDistance < initialDuration ) )
+		{
+			// Calculate the remaining number of seconds in this step
+			remainingDuration = ((startActivityInfo.elapsedDistance + initialDuration) - currentActivityInfo.elapsedDistance );
+		}
+		else if ( startActivityInfo != null && ( currentActivityInfo.elapsedDistance - startActivityInfo.elapsedDistance >= initialDuration ) )
+		{
+			remainingDuration = 0;
+		}
+		else
+		{
+			remainingDuration = initialDuration ;
+		}
+		
+		// Check if we're done
+		if ( remainingDuration <= 0 )
+		{
+			stepComplete();
+		}
+	}
+	
+	function getRemainingDuration()
+	{
+		System.println( (remainingDuration / 1000).toString() );
+		// if we're over 1500 m then return km
+		if ( remainingDuration > 1500 )
+		{
+			return (remainingDuration / 1000).toString();
+		}
+		else
+		{
+			return remainingDuration.toString();
+		}
 	}
 
 }
@@ -181,15 +259,13 @@ class TimeIntervalModel extends IntervalStepBaseModel
 	function initialize(  intervalDuration, stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo )
 	{
 		IntervalStepBaseModel.initialize( stepName, STEP_TIME, intervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo );
-		startActivityInfo = null;
 	}
 	
 	function onStart()
 	{
-		System.println ("Time Interval Started: " + name);
-		
 		// Take a snapshot of the activity at the start of the step
 		startActivityInfo = Activity.getActivityInfo();
+		IntervalStepBaseModel.onStart();
 	}
 
 	function onLap()
@@ -277,7 +353,6 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 	
 	function onStart()
 	{
-		System.println ("On-Time Interval Started: " + name);
 		
 		// Take a snapshot of the activity at the start of the step
 		startActivityInfo = Activity.getActivityInfo();
@@ -295,6 +370,8 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 			// Change the state to the work step
 			intervalState = ON_DURATION_REST_STEP;
 		}
+		
+		IntervalStepBaseModel.onStart();
 	}
 
 	function onLap()
@@ -312,6 +389,8 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 	// Callback called by a work step when it finishes
 	function onDone()
 	{
+		alert();
+		
 		// Take a snapshot of the acitivity at the start of the rest interval
 		restStepStartActivityInfo = Activity.getActivityInfo();
 		
@@ -637,10 +716,11 @@ class Workout
 
 function testWorkouts ()
 {
-	var workouts = new [2];
+	var workouts = new [3];
 	
 	workouts[ 0 ] = simpleRepeatWorkout();
 	workouts[ 1 ] = onTimeRepeatWorkout();
+	workouts[ 2 ] = outAndBackWorkout();
 	
 	return workouts;
 }
@@ -675,6 +755,17 @@ function onTimeRepeatWorkout ()
 	workout.workoutSteps[2] = new OnTimeIntervalModel( 30000, workStep2, "Sprint on 30s", "Easy", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
 
 	workout.workoutSteps[3] = new LapIntervalModel( "Cool Down", "Easy", workout.getDoneCallback() );
+	
+	return workout;
+}
+
+function outAndBackWorkout ()
+{
+	var workout = new Workout( "Out and Back Workout", 2);
+	
+	workout.workoutSteps[0] = new DistanceIntervalModel( 2000, "Out", "Steady", workout.getDoneCallback(), null );
+
+	workout.workoutSteps[1] = new LapIntervalModel( "Back", "Steady", workout.getDoneCallback() );
 	
 	return workout;
 }
