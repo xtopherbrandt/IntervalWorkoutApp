@@ -23,9 +23,8 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     function onNextPage()
     {
         _page = (_page + 1) % 2;
-        System.println( "Page: " + _page );
                 
-        switchToView( Ui.SLIDE_UP);
+        switchToView( Ui.SLIDE_UP );
     }
 
     function onPreviousPage() 
@@ -39,7 +38,7 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
         
         _page = _page % 2;
         
-        switchToView( Ui.SLIDE_DOWN);
+        switchToView( Ui.SLIDE_DOWN );
     }
 	
     function onMenu()
@@ -50,8 +49,17 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     
     function onBack()
     {   
-    	_workout.onLap();
-		
+    	if ( _workout != null && !_workout.onLap() )
+    	{
+    		_workout.onSave();
+    		
+    		// clear our memory
+			_workout = null;
+    		// go back to the main page
+    		_page = -1;
+    		switchToView ( Ui.SLIDE_UP );
+    	}
+    		
     	return true;
     }
     
@@ -137,6 +145,7 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
         }
         else if( 0 == _page )
         {
+        	_workout.reset();
             _view = new StepView( _workout );
         }
         else if( 1 == _page )
@@ -148,14 +157,8 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
             _view = new IntervalTimerListView();
         }
 
-		Ui.switchToView( _view, getDelegate(), transition );
+		Ui.switchToView( _view, mainDelegate, transition );
         
         return _view;
     }
-
-    function getDelegate()
-    {
-        var delegate = new IntervalTimerDelegate( _page, _view, _workouts, _workout );
-        return delegate;
-    }    
 }

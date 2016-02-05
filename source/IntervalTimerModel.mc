@@ -36,7 +36,6 @@ class IntervalStepBaseModel
 	var initialDuration;
 	var remainingDuration;	// a numeric representation of the remaining duration. Each supertype is responsible for providing a string representation
 	var startActivityInfo;
-	var endActivityInfo;
 	
 	function initialize( stepName, stepType, intervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo )
 	{
@@ -46,6 +45,7 @@ class IntervalStepBaseModel
 		doneCallback = stepDoneCallback;
 		initialDuration = intervalDuration;
 		remainingDuration = intervalDuration;
+		startActivityInfo = null;
 		
 		if ( repeatInfo != null )
 		{
@@ -56,7 +56,18 @@ class IntervalStepBaseModel
 			repeats = new RepeatAttribute(0,0);
 		}
 	}
-	
+
+	function reset()
+	{
+		startActivityInfo = null;
+		remainingDuration = initialDuration;
+		
+		if ( repeats != null )
+		{
+			repeats.reset();
+		}
+	}
+		
 	function onStart()
 	{
 	}
@@ -95,6 +106,11 @@ class RepeatAttribute
 			_count = repeatCount;
 			_initialized = true;
 		}
+	}
+
+	function reset()
+	{
+		_stepId = 0;
 	}
 	
 	function getStepId()
@@ -166,7 +182,6 @@ class TimeIntervalModel extends IntervalStepBaseModel
 	{
 		IntervalStepBaseModel.initialize( stepName, STEP_TIME, intervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo );
 		startActivityInfo = null;
-		endActivityInfo = null;
 	}
 	
 	function onStart()
@@ -184,8 +199,6 @@ class TimeIntervalModel extends IntervalStepBaseModel
 	
 	function stepComplete()
 	{
-		// Take a snapshot of the activity at the end of this step
-		endActivityInfo = Activity.getActivityInfo();
 		
 		// Call the done callback
 		doneCallback.invoke();
@@ -196,14 +209,14 @@ class TimeIntervalModel extends IntervalStepBaseModel
 		var currentActivityInfo;
 		
 		currentActivityInfo = Activity.getActivityInfo();
-
+				
 		// if the activity is running
-		if ( startActivityInfo != null && startActivityInfo.elapsedTime != null && endActivityInfo == null )
+		if ( startActivityInfo != null && startActivityInfo.timerTime != null && ( currentActivityInfo.timerTime - startActivityInfo.timerTime < initialDuration ) )
 		{
 			// Calculate the remaining number of seconds in this step
-			remainingDuration = ((startActivityInfo.elapsedTime + initialDuration) - currentActivityInfo.elapsedTime);
+			remainingDuration = ((startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
 		}
-		else if ( endActivityInfo != null )
+		else if ( currentActivityInfo.timerTime - startActivityInfo.timerTime >= initialDuration )
 		{
 			remainingDuration = 0;
 		}
@@ -230,7 +243,7 @@ class TimeIntervalModel extends IntervalStepBaseModel
 		hours = 0;
 		minutes = remainingDuration / 60000;
 		seconds = ( remainingDuration % 60000 ) / 1000;
-		secString = seconds > 9 ? seconds.toString() : format( "0$1$", [ seconds.toString() ]);
+		secString = seconds > 9 ? seconds.toString() : format( "0$1$", [ seconds.toString() ] );
 		minString = minutes > 9 ? minutes.toString() : format( "0$1$", [ minutes.toString() ] );
 		
 		return format( "$1$:$2$", [ minString , secString ] );
@@ -254,6 +267,12 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 		
 		// Set the done callback in the work step
 		workStep.doneCallback = getDoneCallback();
+	}
+
+	function reset()
+	{
+		restStepStartActivityInfo = null;
+		intervalState = ON_DURATION_NOT_STARTED;
 	}
 	
 	function onStart()
@@ -302,8 +321,6 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 
 	function stepComplete()
 	{
-		// Take a snapshot of the activity at the end of this step
-		endActivityInfo = Activity.getActivityInfo();
 		
 		// Call the done callback
 		doneCallback.invoke();
@@ -321,7 +338,7 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 			workStep.timerUpdate();
 
 			// Calculate the remaining number of seconds in this step for the rest step
-			remainingDuration = ((startActivityInfo.elapsedTime + initialDuration) - currentActivityInfo.elapsedTime);
+			remainingDuration = ((startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
 		
 			// If we're out of time, limit the remaing duration to 0
 			if ( remainingDuration <= 0 )
@@ -332,7 +349,7 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 		else if ( intervalState == ON_DURATION_REST_STEP )
 		{
 			// Calculate the remaining number of seconds in this step
-			remainingDuration = ((startActivityInfo.elapsedTime + initialDuration) - currentActivityInfo.elapsedTime);
+			remainingDuration = ((startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
 		
 			// Check if we're done
 			if ( remainingDuration <= 0 )
@@ -414,117 +431,6 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 	}
 }
 
-// A repeater step which allows a set of interval steps to be repeated a specified number of times.
-// A repeater contains a collection of other interval steps which are repeated in the same order everytime.
-// A repeater may also contain another repeater.
-// For example repeat the following 5 times: run 500 m (distance step), walk 60 seconds (time step)
-class IntervalRepeatModel extends IntervalStepBaseModel
-{
-
-	var repeatCount;
-	var currentRepeat;
-	var currentStepId;
-	var stepCount;
-	var intervalSteps; 	// an array of IntervalStepBaseModel
-	
-	function initialize( intervalRepeatCount, numberOfSteps, stepName, stepPerformanceTarget, stepDoneCallback )
-	{
-		repeatCount = intervalRepeatCount;
-		currentRepeat = 0;
-		currentStepId = 0;
-		stepCount = numberOfSteps;
-		intervalSteps = new [numberOfSteps];
-		IntervalStepBaseModel.initialize( stepName, stepPerformanceTarget, stepDoneCallback );
-	}
-	
-	function onStart()
-	{
-		System.println ("Repeat Interval Started " + name);
-		currentRepeat = 1;
-		intervalSteps[currentStepId].onStart();
-	}
-
-	function onLap()
-	{
-		// Call the done callback
-		intervalSteps[currentStepId].onLap();
-	}
-	
-	function onDone()
-	{
-		// if the step we're on within the current repeat is within repeat set, then increment and start the next step		
-		if ( currentStepId < stepCount - 1 )
-		{
-			currentStepId = currentStepId + 1;
-			intervalSteps[currentStepId].onStart();
-		} // otherwise, if our current repeat is with the total repeats, then increment and start a new repeat
-		else if ( currentRepeat < repeatCount )
-		{
-			currentRepeat++;
-			currentStepId = 0;
-			intervalSteps[currentStepId].onStart();
-		}
-		else
-		{
-			doneCallback.invoke();
-		}
-	}
-	
-	function getDoneCallback()
-	{
-		return method( :onDone );
-	}
-	
-	function getNextStepInfo()
-	{
-		var nextStepInfo;
-		
-		// if this repeat hasn't started yet, then the next step is the first step
-		if ( currentRepeat == 0 )
-		{
-			nextStepInfo = intervalSteps[0];
-		} // if the step we're on within the current repeat is within repeat set, then check the next step	
-		else if ( currentStepId < stepCount - 1 )
-		{
-			// Ask the current step if it can return next step info (this would be the case if the next step was a repeater or an onTime/onDistance)
-			nextStepInfo = intervalSteps[currentStepId].getNextStepInfo();
-			
-			// If the current step can't return next step info, then ask the next step info to the next step
-			if ( nextStepInfo == null )
-			{
-				nextStepInfo = intervalSteps[currentStepId + 1].getChildStep();
-				
-				// if the next step can't return next step info, then return the current step info for the next step
-				if ( nextStepInfo == null )
-				{
-					nextStepInfo = intervalSteps[currentStepId + 1];
-
-				}
-			}
-			
-		} // otherwise, if our current repeat is with the total repeats, then increment and start a new repeat
-		else if ( currentRepeat < repeatCount )
-		{
-			// Ask the first step if it can return next step info (this would be the case if the first step was a repeater or an onTime/onDistance)
-			nextStepInfo = intervalSteps[0].getNextStepInfo();
-			
-			// If the first step can't return next step info, then set the next step info to the next step
-			if ( nextStepInfo == null )
-			{
-				nextStepInfo = intervalSteps[0].getCurrentStepInfo();
-			}
-		}
-		else
-		{
-			// the next step isn't here, need to go up a level
-			nextStepInfo = null;
-		}
-		
-		return nextStepInfo;
-	
-	}
-}
-
 class completeWorkoutModel extends IntervalStepBaseModel
 {
 	function initialize()
@@ -551,6 +457,19 @@ class Workout
 		workoutSteps = new [ topLevelStepCount ];
 		_session = null;
 		_completeStep = new completeWorkoutModel();
+	}
+	
+	function reset()
+	{
+		currentStepId = 0;
+		_session = null;
+		
+		// re-initialize the workout
+		for ( var i = 0; i < totalSteps; i++ )
+		{
+			workoutSteps[ i ].reset();
+		}
+	
 	}
 	
 	function isRecording()
@@ -583,6 +502,10 @@ class Workout
                 _session.start();
                 workoutSteps[currentStepId].onStart();
             }
+            else if ( _session != null )
+            {
+            	_session.start();
+            }
         }
 	}
 	
@@ -591,9 +514,16 @@ class Workout
 		if ( isRecording() )
 		{
             _session.stop();
+		}
+	}
+	
+	function onSave()
+	{
+		if ( _session != null )
+		{
             _session.save();
             _session = null;
-		}
+        }
 	}
 	
 	// the lap button always moves to the next interval step
@@ -601,7 +531,13 @@ class Workout
 	{
 		if ( currentStepId < totalSteps )
 		{
+			_session.addLap();
 			workoutSteps[ currentStepId ].onLap();
+			return true;
+		}
+		else
+		{
+			return false;
 		}
 	}
 	
@@ -715,8 +651,8 @@ function simpleRepeatWorkout ()
 	
 	workout.workoutSteps[0] = new LapIntervalModel( "Warm Up", "Easy", workout.getDoneCallback() );
 	
-	workout.workoutSteps[1] = new TimeIntervalModel( 60000, "Hard Effort", "Work", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
-	workout.workoutSteps[2] = new TimeIntervalModel( 30000, "Recovery", "Easy", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
+	workout.workoutSteps[1] = new TimeIntervalModel( 61000, "Hard Effort", "Work", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
+	workout.workoutSteps[2] = new TimeIntervalModel( 31000, "Recovery", "Easy", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
 	
 	workout.workoutSteps[3] = new TimeIntervalModel( 60000, "Hard Effort", "Work", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
 	workout.workoutSteps[4] = new TimeIntervalModel( 30000, "Recovery", "Easy", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
