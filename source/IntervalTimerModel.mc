@@ -36,8 +36,6 @@ class IntervalStepBaseModel
 	var initialDuration;
 	var remainingDuration;	// a numeric representation of the remaining duration. Each supertype is responsible for providing a string representation
 	var startActivityInfo;
-	hidden var _backlightTimer;
-	var backlightIsOn;
 	
 	function initialize( stepName, stepType, intervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo )
 	{
@@ -48,8 +46,6 @@ class IntervalStepBaseModel
 		initialDuration = intervalDuration;
 		remainingDuration = intervalDuration;
 		startActivityInfo = null;
-		_backlightTimer = new Timer.Timer();
-		backlightIsOn = false;
 		
 		if ( repeatInfo != null )
 		{
@@ -83,9 +79,9 @@ class IntervalStepBaseModel
 		
 		if ( !backlightIsOn )
 		{
-			Attention.backlight( true );
-			_backlightTimer.start( method(:backlightOff), 5000, false );
 			backlightIsOn = true;
+			Attention.backlight( true );
+			backlightTimer.start( method(:backlightOff), 5000, false );
 		}
 		
 		vibrationPattern[0] = new Attention.VibeProfile( 50, 1000 );
@@ -95,8 +91,9 @@ class IntervalStepBaseModel
 	
 	function backlightOff ()
 	{
-		Attention.backlight( false );
 		backlightIsOn = false;
+		Attention.backlight( false );
+		backlightTimer.stop();
 	}
 	
 	function timerUpdate()
@@ -239,13 +236,13 @@ class DistanceIntervalModel extends IntervalStepBaseModel
 	{
 		System.println( (remainingDuration / 1000).toString() );
 		// if we're over 1500 m then return km
-		if ( remainingDuration > 1500 )
+		if ( remainingDuration > 1000 )
 		{
-			return (remainingDuration / 1000).toString();
+			return format( "$1$ km", [(remainingDuration / 1000).format("%4.2f")] );
 		}
 		else
 		{
-			return remainingDuration.toString();
+			return format( "$1$ m", [remainingDuration.format("%4d")] );
 		}
 	}
 
@@ -510,6 +507,187 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 	}
 }
 
+// An interval step type that has a work step added to it (like lap, distance or time) and includes an embedded rest step
+// Allows for intervals that repeat on a certain distance: can do stuff like 2 x 500m on 1000m --> every 1Km start a 500 m work interval.
+class OnDistanceIntervalModel extends IntervalStepBaseModel
+{
+	var workStep;		//definition of the work step
+	var restStepStartActivityInfo;	// the activity time stamp at the start of the rest interval
+	var intervalState;
+	
+	function initialize( totalIntervalDuration, workIntervalStep, stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo )
+	{
+		workStep = workIntervalStep;
+		intervalState = ON_DURATION_NOT_STARTED;
+		IntervalStepBaseModel.initialize( stepName, SET_ON_DISTANCE, totalIntervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo );
+		
+		// Set the done callback in the work step
+		workStep.doneCallback = getDoneCallback();
+	}
+
+	function reset()
+	{
+		restStepStartActivityInfo = null;
+		intervalState = ON_DURATION_NOT_STARTED;
+	}
+	
+	function onStart()
+	{
+		
+		// Take a snapshot of the activity at the start of the step
+		startActivityInfo = Activity.getActivityInfo();
+		
+		// Start the work step
+		if ( workStep != null )
+		{		
+			// Change the state to the work step
+			intervalState = ON_DURATION_WORK_STEP;
+			
+			workStep.onStart();
+		}
+		else
+		{
+			// Change the state to the work step
+			intervalState = ON_DURATION_REST_STEP;
+		}
+		
+		IntervalStepBaseModel.onStart();
+	}
+
+	function onLap()
+	{
+		if ( intervalState == ON_DURATION_WORK_STEP )
+		{
+			workStep.onLap();
+		}
+		else
+		{
+			stepComplete();
+		}
+	}
+	
+	// Callback called by a work step when it finishes
+	function onDone()
+	{
+		alert();
+		
+		// Take a snapshot of the acitivity at the start of the rest interval
+		restStepStartActivityInfo = Activity.getActivityInfo();
+		
+		// Change the state to the rest state
+		intervalState = ON_DURATION_REST_STEP;
+	}
+
+	function stepComplete()
+	{
+		
+		// Call the done callback
+		doneCallback.invoke();
+	}
+
+	function timerUpdate()
+	{
+		var currentActivityInfo;
+		
+		currentActivityInfo = Activity.getActivityInfo();
+
+		// if the work step is running, pass this update through
+		if ( intervalState == ON_DURATION_WORK_STEP )
+		{
+			workStep.timerUpdate();
+
+			// Calculate the remaining distance in this step for the rest step
+			remainingDuration = ((startActivityInfo.elapsedDistance + initialDuration) - currentActivityInfo.elapsedDistance);
+		
+			// If we're out of distance, limit the remaing duration to 0
+			if ( remainingDuration <= 0 )
+			{
+				remainingDuration = 0;
+			}
+		}
+		else if ( intervalState == ON_DURATION_REST_STEP )
+		{
+			// Calculate the remaining number of seconds in this step
+			remainingDuration = ((startActivityInfo.elapsedDistance + initialDuration) - currentActivityInfo.elapsedDistance);
+		
+			// Check if we're done
+			if ( remainingDuration <= 0 )
+			{
+				stepComplete();
+			}
+		}
+		else
+		{
+			remainingDuration = initialDuration ;
+		}
+	}
+	
+	function getDoneCallback()
+	{
+		return method( :onDone );
+	}
+
+	function getChildStep()
+	{
+		if ( intervalState == ON_DURATION_NOT_STARTED || intervalState == ON_DURATION_WORK_STEP )
+		{
+			// if there is a workstep
+			if ( workStep != null )
+			{
+				// if the work step has a child, return it, otherwise return the work step
+				if ( workStep.getChildStep() != null )
+				{
+					return workStep.getChildStep();
+				}
+				else
+				{
+					return workStep;
+				}
+			}
+		}
+		
+		// if we're in the rest state or there is no work step then return null which will have this object passed as the child
+		return null;
+	}
+	
+	function getNextStepInfo ()
+	{
+		if ( intervalState == ON_DURATION_NOT_STARTED && workStep != null )
+		{
+			if ( workStep.getNextStepInfo() != null )
+			{
+				return workStep.getNextStepInfo();
+			}
+			else
+			{
+				return workStep;
+			}
+		}
+		else if ( intervalState == ON_DURATION_WORK_STEP && remainingDuration > 0 ) // if we're on the work step and we still have time to recover, return this as the next step
+		{
+			return weak().get();
+		}
+		
+		// if we're in the rest state or there is no work step then return null which will have this object passed as the child
+		return null;
+	}
+	
+	function getRemainingDuration()
+	{
+		System.println( (remainingDuration / 1000).toString() );
+		// if we're over 1500 m then return km
+		if ( remainingDuration > 1000 )
+		{
+			return format( "$1$ km", [(remainingDuration / 1000).format("%4.2f")] );
+		}
+		else
+		{
+			return format( "$1$ m", [remainingDuration.format("%4d")] );
+		}
+	}
+
+}
+
 class completeWorkoutModel extends IntervalStepBaseModel
 {
 	function initialize()
@@ -719,7 +897,7 @@ function testWorkouts ()
 	var workouts = new [3];
 	
 	workouts[ 0 ] = simpleRepeatWorkout();
-	workouts[ 1 ] = onTimeRepeatWorkout();
+	workouts[ 1 ] = onTimeOnDistanceRepeatWorkout();
 	workouts[ 2 ] = outAndBackWorkout();
 	
 	return workouts;
@@ -742,9 +920,9 @@ function simpleRepeatWorkout ()
 	return workout;
 }
 
-function onTimeRepeatWorkout ()
+function onTimeOnDistanceRepeatWorkout ()
 {
-	var workout = new Workout( "On-Time Repeat Workout", 4);
+	var workout = new Workout( "On-Time On-Distance Repeat Workout", 6);
 	
 	workout.workoutSteps[0] = new LapIntervalModel( "Warm Up", "Easy", workout.getDoneCallback() );
 	
@@ -753,8 +931,14 @@ function onTimeRepeatWorkout ()
 	
 	var workStep2 = new LapIntervalModel( "15 Step Sprint", "Work", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
 	workout.workoutSteps[2] = new OnTimeIntervalModel( 30000, workStep2, "Sprint on 30s", "Easy", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
+	
+	var workStep3 = new LapIntervalModel( "500 m Hard", "Work", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
+	workout.workoutSteps[3] = new OnDistanceIntervalModel( 1000, workStep3, "Sprint on 30s", "Easy", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
+	
+	var workStep4 = new LapIntervalModel( "500 m Hard", "Work", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
+	workout.workoutSteps[4] = new OnDistanceIntervalModel( 1000, workStep4, "Sprint on 30s", "Easy", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
 
-	workout.workoutSteps[3] = new LapIntervalModel( "Cool Down", "Easy", workout.getDoneCallback() );
+	workout.workoutSteps[5] = new LapIntervalModel( "Cool Down", "Easy", workout.getDoneCallback() );
 	
 	return workout;
 }

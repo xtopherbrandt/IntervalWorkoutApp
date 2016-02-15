@@ -7,6 +7,8 @@ var timersRunning = false;
 var mainDelegate;
 var workoutList;
 var initialView;
+var backlightTimer;
+var backlightIsOn;
 
 class IntervalTimerApp extends App.AppBase 
 {
@@ -18,6 +20,8 @@ class IntervalTimerApp extends App.AppBase
     	workoutList = testWorkouts();
 		initialView = new IntervalTimerListView();
         timer1 = new Timer.Timer();
+		backlightTimer = new Timer.Timer();
+		backlightIsOn = false;
 
 		mainDelegate = new IntervalTimerDelegate( -1, initialView, workoutList  );    	
     
