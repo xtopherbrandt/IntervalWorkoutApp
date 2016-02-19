@@ -210,19 +210,25 @@ class DistanceIntervalModel extends IntervalStepBaseModel
 		
 		currentActivityInfo = Activity.getActivityInfo();
 		
-		// if the activity is running
-		if ( startActivityInfo != null && startActivityInfo.elapsedDistance != null && ( currentActivityInfo.elapsedDistance - startActivityInfo.elapsedDistance < initialDuration ) )
+		if ( startActivityInfo != null )
 		{
-			// Calculate the remaining number of seconds in this step
-			remainingDuration = ((startActivityInfo.elapsedDistance + initialDuration) - currentActivityInfo.elapsedDistance );
-		}
-		else if ( startActivityInfo != null && ( currentActivityInfo.elapsedDistance - startActivityInfo.elapsedDistance >= initialDuration ) )
-		{
-			remainingDuration = 0;
-		}
-		else
-		{
-			remainingDuration = initialDuration ;
+			if ( startActivityInfo.elapsedDistance != null && currentActivityInfo.elapsedDistance != null )
+			{
+				// if the activity is running
+				if ( ( currentActivityInfo.elapsedDistance - startActivityInfo.elapsedDistance < initialDuration ) )
+				{
+					// Calculate the remaining number of seconds in this step
+					remainingDuration = ((startActivityInfo.elapsedDistance + initialDuration) - currentActivityInfo.elapsedDistance );
+				}
+				else if ( startActivityInfo != null && ( currentActivityInfo.elapsedDistance - startActivityInfo.elapsedDistance >= initialDuration ) )
+				{
+					remainingDuration = 0;
+				}
+				else
+				{
+					remainingDuration = initialDuration ;
+				}
+			}
 		}
 		
 		// Check if we're done
@@ -234,7 +240,6 @@ class DistanceIntervalModel extends IntervalStepBaseModel
 	
 	function getRemainingDuration()
 	{
-		System.println( (remainingDuration / 1000).toString() );
 		// if we're over 1500 m then return km
 		if ( remainingDuration > 1000 )
 		{
@@ -283,19 +288,27 @@ class TimeIntervalModel extends IntervalStepBaseModel
 		
 		currentActivityInfo = Activity.getActivityInfo();
 				
-		// if the activity is running
-		if ( startActivityInfo != null && startActivityInfo.timerTime != null && ( currentActivityInfo.timerTime - startActivityInfo.timerTime < initialDuration ) )
+		if ( startActivityInfo != null )
 		{
-			// Calculate the remaining number of seconds in this step
-			remainingDuration = ((startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
-		}
-		else if ( currentActivityInfo.timerTime - startActivityInfo.timerTime >= initialDuration )
-		{
-			remainingDuration = 0;
-		}
-		else
-		{
-			remainingDuration = initialDuration ;
+			if ( currentActivityInfo.timerTime != null && startActivityInfo.timerTime != null )
+			{
+		
+				// if the activity is running
+				if ( ( currentActivityInfo.timerTime - startActivityInfo.timerTime < initialDuration ) )
+				{
+					// Calculate the remaining number of seconds in this step
+					remainingDuration = ((startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
+				}
+				else if ( currentActivityInfo.timerTime - startActivityInfo.timerTime >= initialDuration )
+				{
+					remainingDuration = 0;
+				}
+				else
+				{
+					remainingDuration = initialDuration ;
+				}
+					
+			}
 		}
 		
 		// Check if we're done
@@ -408,34 +421,40 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 		
 		currentActivityInfo = Activity.getActivityInfo();
 
-		// if the work step is running, pass this update through
-		if ( intervalState == ON_DURATION_WORK_STEP )
+		if ( startActivityInfo != null )
 		{
-			workStep.timerUpdate();
-
-			// Calculate the remaining number of seconds in this step for the rest step
-			remainingDuration = ((startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
-		
-			// If we're out of time, limit the remaing duration to 0
-			if ( remainingDuration <= 0 )
+			if ( startActivityInfo.timerTime != null && currentActivityInfo.timerTime != null )
 			{
-				remainingDuration = 0;
-			}
-		}
-		else if ( intervalState == ON_DURATION_REST_STEP )
-		{
-			// Calculate the remaining number of seconds in this step
-			remainingDuration = ((startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
+				// if the work step is running, pass this update through
+				if ( intervalState == ON_DURATION_WORK_STEP )
+				{
+					workStep.timerUpdate();
 		
-			// Check if we're done
-			if ( remainingDuration <= 0 )
-			{
-				stepComplete();
+					// Calculate the remaining number of seconds in this step for the rest step
+					remainingDuration = ((startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
+				
+					// If we're out of time, limit the remaing duration to 0
+					if ( remainingDuration <= 0 )
+					{
+						remainingDuration = 0;
+					}
+				}
+				else if ( intervalState == ON_DURATION_REST_STEP )
+				{
+					// Calculate the remaining number of seconds in this step
+					remainingDuration = ((startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
+				
+					// Check if we're done
+					if ( remainingDuration <= 0 )
+					{
+						stepComplete();
+					}
+				}
+				else
+				{
+					remainingDuration = initialDuration ;
+				}
 			}
-		}
-		else
-		{
-			remainingDuration = initialDuration ;
 		}
 	}
 	
@@ -591,34 +610,40 @@ class OnDistanceIntervalModel extends IntervalStepBaseModel
 		
 		currentActivityInfo = Activity.getActivityInfo();
 
-		// if the work step is running, pass this update through
-		if ( intervalState == ON_DURATION_WORK_STEP )
+		if ( startActivityInfo != null )
 		{
-			workStep.timerUpdate();
-
-			// Calculate the remaining distance in this step for the rest step
-			remainingDuration = ((startActivityInfo.elapsedDistance + initialDuration) - currentActivityInfo.elapsedDistance);
-		
-			// If we're out of distance, limit the remaing duration to 0
-			if ( remainingDuration <= 0 )
+			if ( startActivityInfo.elapsedDistance != null && currentActivityInfo.elapsedDistance != null )
 			{
-				remainingDuration = 0;
-			}
-		}
-		else if ( intervalState == ON_DURATION_REST_STEP )
-		{
-			// Calculate the remaining number of seconds in this step
-			remainingDuration = ((startActivityInfo.elapsedDistance + initialDuration) - currentActivityInfo.elapsedDistance);
+				// if the work step is running, pass this update through
+				if ( intervalState == ON_DURATION_WORK_STEP )
+				{
+					workStep.timerUpdate();
 		
-			// Check if we're done
-			if ( remainingDuration <= 0 )
-			{
-				stepComplete();
+					// Calculate the remaining distance in this step for the rest step
+					remainingDuration = ((startActivityInfo.elapsedDistance + initialDuration) - currentActivityInfo.elapsedDistance);
+				
+					// If we're out of distance, limit the remaing duration to 0
+					if ( remainingDuration <= 0 )
+					{
+						remainingDuration = 0;
+					}
+				}
+				else if ( intervalState == ON_DURATION_REST_STEP )
+				{
+					// Calculate the remaining number of seconds in this step
+					remainingDuration = ((startActivityInfo.elapsedDistance + initialDuration) - currentActivityInfo.elapsedDistance);
+				
+					// Check if we're done
+					if ( remainingDuration <= 0 )
+					{
+						stepComplete();
+					}
+				}
+				else
+				{
+					remainingDuration = initialDuration ;
+				}
 			}
-		}
-		else
-		{
-			remainingDuration = initialDuration ;
 		}
 	}
 	
@@ -674,7 +699,6 @@ class OnDistanceIntervalModel extends IntervalStepBaseModel
 	
 	function getRemainingDuration()
 	{
-		System.println( (remainingDuration / 1000).toString() );
 		// if we're over 1500 m then return km
 		if ( remainingDuration > 1000 )
 		{
@@ -770,6 +794,7 @@ class Workout
 	{
 		if ( isRecording() )
 		{
+        	System.println ("Stop");
             _session.stop();
 		}
 	}
@@ -780,13 +805,14 @@ class Workout
 		{
             _session.save();
             _session = null;
+            System.println("Saved");
         }
 	}
 	
 	// the lap button always moves to the next interval step
 	function onLap()
 	{
-		if ( currentStepId < totalSteps )
+		if ( isRecording() && currentStepId < totalSteps )
 		{
 			_session.addLap();
 			workoutSteps[ currentStepId ].onLap();
@@ -809,16 +835,8 @@ class Workout
 		}
 		else
 		{
-	        if( Toybox has :ActivityRecording ) 
-	        {
-	            if( _session != null && _session.isRecording() ) 
-	            {
-	                _session.stop();
-	                _session.save();
-	                _session = null;
-					currentStepId = currentStepId + 1;
-	            }
-	        }
+			onStop();
+			currentStepId = currentStepId + 1;
 		}
 	}
 	

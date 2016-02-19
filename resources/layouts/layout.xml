@@ -25,8 +25,17 @@
 	</layout>
 	<layout id="Page2Layout">
 		<drawable id="MainBackground" />
-		<label id="Page2Distance" text="Distance" justification="Gfx.TEXT_JUSTIFY_LEFT" x="25" y="10" font="Gfx.FONT_LARGE" color="Gfx.COLOR_BLACK" />
-		<label id="Page2Time" text="Time" justification="Gfx.TEXT_JUSTIFY_LEFT" x="25" y="65" font="Gfx.FONT_LARGE" color="Gfx.COLOR_BLACK" />
-		<label id="Page2Pace" text="Pace" justification="Gfx.TEXT_JUSTIFY_LEFT" x="25" y="120" font="Gfx.FONT_LARGE" color="Gfx.COLOR_BLACK" />
+		<label id="Page2DistanceText" text="Distance" justification="Gfx.TEXT_JUSTIFY_LEFT" x="15" y="12" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="Page2Distance" text="Distance" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="195" y="5" font="Gfx.FONT_NUMBER_HOT" color="Gfx.COLOR_BLACK" />
+		
+		<drawable id="divider50" />
+				
+		<label id="Page2TimeText" text="Timer" justification="Gfx.TEXT_JUSTIFY_LEFT" x="15" y="64" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="Page2Time" text="Time" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="195" y="55" font="Gfx.FONT_NUMBER_HOT" color="Gfx.COLOR_BLACK" />
+		
+		<drawable id="divider100" />
+		
+		<label id="Page2HRText" text="Heart Rate" justification="Gfx.TEXT_JUSTIFY_LEFT" x="15" y="115" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />	
+		<label id="Page2HR" text="___" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="195" y="105" font="Gfx.FONT_NUMBER_HOT" color="Gfx.COLOR_BLACK" />
 	</layout>
 </resources>

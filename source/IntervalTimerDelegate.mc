@@ -73,16 +73,19 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
 			if ( evt.getCoordinates()[1] < 50 )
 			{
 				_workout = _workouts[ 0 ];
+        		_workout.reset();
 				onNextPage();
 			}
 			else if ( evt.getCoordinates()[1] < 100 ) // Tap the second line
 			{
 				_workout = _workouts[ 1 ];
+        		_workout.reset();
 				onNextPage();
 			}
 			else if ( evt.getCoordinates()[1] > 100 ) // Tap the third line
 			{
 				_workout = _workouts[ 2 ];
+        		_workout.reset();
 				onNextPage();
 			}
 		}
@@ -102,7 +105,6 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
         {
         	if ( _workout.isRecording() )
         	{
-        		System.println ("Stop");
         		_workout.onStop();
             }
             else
@@ -146,12 +148,11 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
         }
         else if( 0 == _page )
         {
-        	_workout.reset();
             _view = new StepView( _workout );
         }
         else if( 1 == _page )
         {
-            _view = new Page2View();
+            _view = new Page2View( );
         }
         else
         {
