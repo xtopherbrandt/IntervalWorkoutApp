@@ -752,7 +752,7 @@ class Workout
 		}
 	
 	}
-	
+
 	function isRecording()
 	{
         if( Toybox has :ActivityRecording ) 
@@ -768,6 +768,15 @@ class Workout
 	
 	function onStart()
 	{
+				
+		var vibrationPattern = new [3];
+		
+		vibrationPattern[0] = new Attention.VibeProfile( 50, 500 );
+		
+		vibrationPattern[1] = new Attention.VibeProfile( 0, 500 );
+		
+		vibrationPattern[2] = new Attention.VibeProfile( 50, 500 );
+		
 		if ( isRecording() )
 		{
             _session.stop();
@@ -779,7 +788,8 @@ class Workout
         if( Toybox has :ActivityRecording ) 
         {
             if( ( _session == null ) || ( _session.isRecording() == false ) ) {
-                _session = ActivityRecording.createSession({ :sport => ActivityRecording.SPORT_RUNNING, :subSport => ActivityRecording.SUB_SPORT_CARDIO_TRAINING, :name => name});
+				// note the name parameter must be < 15 characters on the Vivoactive, but is ignored by Garmin Connect
+                _session = Toybox.ActivityRecording.createSession({ :sport => Toybox.ActivityRecording.SPORT_RUNNING, :subSport => Toybox.ActivityRecording.SUB_SPORT_CARDIO_TRAINING, :name => "Interval Run"});
                 _session.start();
                 workoutSteps[currentStepId].onStart();
             }
@@ -789,7 +799,7 @@ class Workout
             }
         }
 	}
-	
+		
 	function onStop()
 	{
 		if ( isRecording() )
@@ -915,7 +925,7 @@ function testWorkouts ()
 	var workouts = new [3];
 	
 	workouts[ 0 ] = simpleRepeatWorkout();
-	workouts[ 1 ] = onTimeOnDistanceRepeatWorkout();
+	workouts[ 1 ] = OneTwoTwoOneWorkout();
 	workouts[ 2 ] = outAndBackWorkout();
 	
 	return workouts;
@@ -932,6 +942,29 @@ function simpleRepeatWorkout ()
 	
 	workout.workoutSteps[3] = new TimeIntervalModel( 60000, "Hard Effort", "Work", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
 	workout.workoutSteps[4] = new TimeIntervalModel( 30000, "Recovery", "Easy", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
+
+	workout.workoutSteps[5] = new LapIntervalModel( "Cool Down", "Easy", workout.getDoneCallback() );
+	
+	return workout;
+}
+
+function OneTwoTwoOneWorkout ()
+{
+	var workout = new Workout( "1-2-2-1 Workout", 6);
+	
+	workout.workoutSteps[0] = new LapIntervalModel( "Warm Up", "Easy", workout.getDoneCallback() );
+	
+	var workStep1 = new DistanceIntervalModel( 1000, "Interval", "Work", workout.getDoneCallback(), null );
+	workout.workoutSteps[1] = new OnDistanceIntervalModel( 1500, workStep1, "1 Km Hard", "Easy", workout.getDoneCallback(), null );
+	
+	var workStep2 = new DistanceIntervalModel( 2000, "Interval", "Work", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
+	workout.workoutSteps[2] = new OnDistanceIntervalModel( 3000, workStep2, "2 Km Hard", "Easy", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
+	
+	var workStep3 = new DistanceIntervalModel( 2000, "Interval", "Work", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
+	workout.workoutSteps[3] = new OnDistanceIntervalModel( 1000, workStep3, "2 Km Hard", "Easy", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
+	
+	var workStep4 = new DistanceIntervalModel( 1000, "Interval", "Work", workout.getDoneCallback(), null );
+	workout.workoutSteps[4] = new OnDistanceIntervalModel( 1500, workStep4, "1 Km Hard", "Easy", workout.getDoneCallback(), null );
 
 	workout.workoutSteps[5] = new LapIntervalModel( "Cool Down", "Easy", workout.getDoneCallback() );
 	

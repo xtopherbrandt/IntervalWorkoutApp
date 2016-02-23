@@ -1,27 +1,27 @@
 <resources>
 	<layout id="WorkoutListLayout">
-		<label x="center" y="5" text="@Strings.workout_1" color="Gfx.COLOR_WHITE" justification="Gfx.TEXT_JUSTIFY_CENTER" />
-		<label x="center" y="60" text="@Strings.workout_2" color="Gfx.COLOR_WHITE" justification="Gfx.TEXT_JUSTIFY_CENTER" />
-		<label x="center" y="115" text="@Strings.workout_3" color="Gfx.COLOR_WHITE" justification="Gfx.TEXT_JUSTIFY_CENTER" />
+		<label id="workout_1" x="center" y="5" text="@Strings.workout_1" color="Gfx.COLOR_WHITE" justification="Gfx.TEXT_JUSTIFY_CENTER" />
+		<label id="workout_2" x="center" y="60" text="@Strings.workout_2" color="Gfx.COLOR_WHITE" justification="Gfx.TEXT_JUSTIFY_CENTER" />
+		<label id="workout_3" x="center" y="115" text="@Strings.workout_3" color="Gfx.COLOR_WHITE" justification="Gfx.TEXT_JUSTIFY_CENTER" />
 	
 	</layout>
 	<layout id="IntervalStepLayout">
 		<drawable id="MainBackground" />
-		<label id="IntervalName" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="8" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
-		<label id="Until" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="38" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
-		<label id="IntervalLength" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="60" font="Gfx.FONT_LARGE" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalName" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="3" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
+		<label id="Until" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="33" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
+		<label id="IntervalLength" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="53" font="Gfx.FONT_LARGE" color="Gfx.COLOR_BLACK" />
 		<label id="IntervalRepeatStep" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="175" y="35" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />
 		<label id="IntervalRepeatDivider" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="180" y="45" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
 		<label id="IntervalRepeatCount" text="" justification="Gfx.TEXT_JUSTIFY_LEFT" x="185" y="50" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />
 		
-		<drawable id="divider95" />
+		<drawable id="divider90" />
 		
-		<label id="NextIntervalName" text="Run Easy" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="100" font="Gfx.FONT_SMALL" color="Gfx.COLOR_LT_GRAY" />
-		<label id="NextUntil" text="For" justification="Gfx.TEXT_JUSTIFY_LEFT" x="10" y="125" font="Gfx.FONT_SMALL" color="Gfx.COLOR_LT_GRAY" />
-		<label id="NextIntervalLength" text="500" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="125" font="Gfx.FONT_SMALL" color="Gfx.COLOR_LT_GRAY" />
-		<label id="NextIntervalRepeatStep" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="175" y="110" font="Gfx.FONT_TINY" color="Gfx.COLOR_LT_GRAY" />
-		<label id="NextIntervalRepeatDivider" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="180" y="115" font="Gfx.FONT_TINY" color="Gfx.COLOR_LT_GRAY" />
-		<label id="NextIntervalRepeatCount" text="" justification="Gfx.TEXT_JUSTIFY_LEFT" x="185" y="117" font="Gfx.FONT_TINY" color="Gfx.COLOR_LT_GRAY" />
+		<label id="NextIntervalName" text="Run Easy" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="95" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_DK_GRAY" />
+		<label id="NextUntil" text="For" justification="Gfx.TEXT_JUSTIFY_LEFT" x="10" y="120" font="Gfx.FONT_SMALL" color="Gfx.COLOR_DK_GRAY" />
+		<label id="NextIntervalLength" text="500" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="120" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_DK_GRAY" />
+		<label id="NextIntervalRepeatStep" text="" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="175" y="110" font="Gfx.FONT_TINY" color="Gfx.COLOR_DK_GRAY" />
+		<label id="NextIntervalRepeatDivider" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="180" y="115" font="Gfx.FONT_TINY" color="Gfx.COLOR_DK_GRAY" />
+		<label id="NextIntervalRepeatCount" text="" justification="Gfx.TEXT_JUSTIFY_LEFT" x="185" y="117" font="Gfx.FONT_TINY" color="Gfx.COLOR_DK_GRAY" />
 	</layout>
 	<layout id="Page2Layout">
 		<drawable id="MainBackground" />

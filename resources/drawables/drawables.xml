@@ -6,8 +6,8 @@
 	<drawable-list id="divider50" >
 		<shape type="rectangle" x="0" y="50" height="2" color="Gfx.COLOR_BLACK" />	
 	</drawable-list>	
-	<drawable-list id="divider95" >
-		<shape type="rectangle" x="0" y="95" height="2" color="Gfx.COLOR_BLACK" />	
+	<drawable-list id="divider90" >
+		<shape type="rectangle" x="0" y="90" height="2" color="Gfx.COLOR_BLACK" />	
 	</drawable-list>	
 	<drawable-list id="divider100" >
 		<shape type="rectangle" x="0" y="100" height="2" color="Gfx.COLOR_BLACK" />	

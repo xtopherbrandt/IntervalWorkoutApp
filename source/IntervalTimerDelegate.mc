@@ -49,6 +49,11 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     
     function onBack()
     {   
+    	if ( _page == -1 )
+    	{
+    		System.exit();
+    	}
+    	
     	if ( _workout != null && !_workout.onLap() )
     	{
     		_workout.onSave();
@@ -101,19 +106,21 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     {
 		var key = evt.getKey();
 		
-        if( key == KEY_ENTER || key == KEY_START )
-        {
-        	if ( _workout.isRecording() )
-        	{
-        		_workout.onStop();
-            }
-            else
-            {
-        		System.println ("Start");
-            	_workout.onStart();
-            }
-        }    	
- 
+		if ( _workout != null )
+		{
+	        if( key == KEY_ENTER || key == KEY_START )
+	        {
+	        	if ( _workout.isRecording() )
+	        	{
+	        		_workout.onStop();
+	            }
+	            else
+	            {
+	        		_workout.onStart();
+	            }
+	        }    	
+ 		}
+ 		
  		return true;
     }
 

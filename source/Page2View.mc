@@ -106,7 +106,7 @@ class Page2View extends Ui.View
 		{
 			if ( currentActivityInfo.currentHeartRate != null )
 			{
-				heartRateString = format( "$1$", [(currentActivityInfo.currentHeartRate / 1000).toString()] );
+				heartRateString = format( "$1$", [(currentActivityInfo.currentHeartRate).toString()] );
 			}
 		}
 		

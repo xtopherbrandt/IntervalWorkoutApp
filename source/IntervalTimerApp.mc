@@ -1,5 +1,8 @@
 using Toybox.Application as App;
 using Toybox.WatchUi as Ui;
+using Toybox.Position as Position;
+using Toybox.Sensor as Sensor;
+
 
 var timer1;
 var count1 = 0;
@@ -22,6 +25,10 @@ class IntervalTimerApp extends App.AppBase
         timer1 = new Timer.Timer();
 		backlightTimer = new Timer.Timer();
 		backlightIsOn = false;
+				
+		Position.enableLocationEvents( Position.LOCATION_ONE_SHOT, method(:onPosition) );
+		Sensor.enableSensorEvents( null );
+		Sensor.setEnabledSensors( [Sensor.SENSOR_HEARTRATE] );
 
 		mainDelegate = new IntervalTimerDelegate( -1, initialView, workoutList  );    	
     
@@ -29,6 +36,12 @@ class IntervalTimerApp extends App.AppBase
 
     // onStop() is called when your application is exiting
     function onStop() 
+    {
+    	Position.enableLocationEvents( Position.LOCATION_DISABLE, method(:onPosition) );
+		Sensor.setEnabledSensors( [] );
+    }
+
+    function onPosition(info) 
     {
     }
 
