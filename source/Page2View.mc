@@ -40,8 +40,8 @@ class Page2View extends Ui.View
 		// Update the workout duration
 		setField( dc, "Page2Time", getElapsedTime() );
 		
-		// Update the current hr
-		setField( dc, "Page2HR", getCurrentHeartRate() );
+		// Update the current pace
+		setField( dc, "Page2HR", getCurrentPace() );
     
         View.onUpdate(dc);
         
@@ -86,6 +86,34 @@ class Page2View extends Ui.View
 			minutes = totalTime / 60000;
 			seconds = ( totalTime % 60000 ) / 1000;
 		}
+
+		secString = seconds > 9 ? seconds.toString() : format( "0$1$", [ seconds.toString() ]);
+		minString = minutes > 9 ? minutes.toString() : format( "0$1$", [ minutes.toString() ] );
+		
+		return format( "$1$:$2$", [ minString , secString ] );
+	}
+
+	function getCurrentPace()
+	{
+		var hours;
+		var minutes;
+		var seconds;
+		var secString;
+		var minString;
+    	var paceSecPerKm;
+		
+		hours = 0;
+    	minutes = 0;
+    	seconds = 0;
+    	paceSecPerKm = 0;
+    	
+    	if ( Activity.getActivityInfo().currentSpeed != null && Activity.getActivityInfo().currentSpeed > 0 ) 
+    	{
+ 			paceSecPerKm = ( 1 / Activity.getActivityInfo().currentSpeed ) * 1000;    
+ 		}	
+
+		minutes = paceSecPerKm.toLong() / 60;
+		seconds = ( paceSecPerKm.toLong() % 60 );
 
 		secString = seconds > 9 ? seconds.toString() : format( "0$1$", [ seconds.toString() ]);
 		minString = minutes > 9 ? minutes.toString() : format( "0$1$", [ minutes.toString() ] );

@@ -5,18 +5,16 @@ using Toybox.System as Sys;
 class IntervalTimerDelegate extends Ui.BehaviorDelegate
 {
 	hidden var _page;
-	hidden var _workouts;
 	hidden var _view;
 	hidden var _workout;
 
-    function initialize( page, view, workouts, workout )
+    function initialize( page, view )
     {
     	// initialize the page to -1 --> workout list page
         _page = page;
-        _workouts = workouts;
         _view = view;
         startTimer();
-        _workout = workout;
+        _workout = null;
     }
 
 	// Cycle through the pages after -1
@@ -58,8 +56,8 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     	{
     		_workout.onSave();
     		
-    		// clear our memory
-			_workout = null;
+    		_workout = null;
+    		
     		// go back to the main page
     		_page = -1;
     		switchToView ( Ui.SLIDE_UP );
@@ -77,22 +75,20 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
 			// Tap the first line
 			if ( evt.getCoordinates()[1] < 50 )
 			{
-				_workout = _workouts[ 0 ];
-        		_workout.reset();
-				onNextPage();
+				_workout = WorkoutFactory.generateWorkout( 0 );
 			}
 			else if ( evt.getCoordinates()[1] < 100 ) // Tap the second line
 			{
-				_workout = _workouts[ 1 ];
-        		_workout.reset();
-				onNextPage();
+				_workout = WorkoutFactory.generateWorkout( 1 );
 			}
 			else if ( evt.getCoordinates()[1] > 100 ) // Tap the third line
 			{
-				_workout = _workouts[ 2 ];
-        		_workout.reset();
-				onNextPage();
+				_workout = WorkoutFactory.generateWorkout( 2 );
 			}
+			
+    		_workout.reset();
+			onNextPage();
+			
 		}
 		else
 		{
@@ -106,10 +102,10 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     {
 		var key = evt.getKey();
 		
-		if ( _workout != null )
-		{
-	        if( key == KEY_ENTER || key == KEY_START )
-	        {
+        if( key == KEY_ENTER || key == KEY_START )
+        {
+        	if ( _workout != null )
+        	{
 	        	if ( _workout.isRecording() )
 	        	{
 	        		_workout.onStop();
@@ -118,8 +114,8 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
 	            {
 	        		_workout.onStart();
 	            }
-	        }    	
- 		}
+            }
+        }    	
  		
  		return true;
     }
@@ -140,8 +136,8 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
         
         if ( _workout != null )
         {
-        	_workout.timerUpdate();
-        }
+       		_workout.timerUpdate();
+       	}
         
         Ui.requestUpdate();
     }

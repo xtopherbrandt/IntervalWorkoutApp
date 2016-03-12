@@ -8,7 +8,6 @@ var timer1;
 var count1 = 0;
 var timersRunning = false;
 var mainDelegate;
-var workoutList;
 var initialView;
 var backlightTimer;
 var backlightIsOn;
@@ -20,7 +19,7 @@ class IntervalTimerApp extends App.AppBase
     // onStart() is called on application start up
     function onStart() 
     {
-    	workoutList = testWorkouts();
+    	
 		initialView = new IntervalTimerListView();
         timer1 = new Timer.Timer();
 		backlightTimer = new Timer.Timer();
@@ -30,7 +29,7 @@ class IntervalTimerApp extends App.AppBase
 		Sensor.enableSensorEvents( null );
 		Sensor.setEnabledSensors( [Sensor.SENSOR_HEARTRATE] );
 
-		mainDelegate = new IntervalTimerDelegate( -1, initialView, workoutList  );    	
+		mainDelegate = new IntervalTimerDelegate( -1, initialView );    	
     
     }
 

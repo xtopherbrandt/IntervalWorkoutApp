@@ -169,6 +169,7 @@ class LapIntervalModel extends IntervalStepBaseModel
 
 	function onLap()
 	{
+			
 		// Call the done callback
 		doneCallback.invoke();
 	}
@@ -501,7 +502,7 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 		}
 		else if ( intervalState == ON_DURATION_WORK_STEP && remainingDuration > 0 ) // if we're on the work step and we still have time to recover, return this as the next step
 		{
-			return weak().get();
+			return obj;
 		}
 		
 		// if we're in the rest state or there is no work step then return null which will have this object passed as the child
@@ -690,7 +691,7 @@ class OnDistanceIntervalModel extends IntervalStepBaseModel
 		}
 		else if ( intervalState == ON_DURATION_WORK_STEP && remainingDuration > 0 ) // if we're on the work step and we still have time to recover, return this as the next step
 		{
-			return weak().get();
+			return obj;
 		}
 		
 		// if we're in the rest state or there is no work step then return null which will have this object passed as the child
@@ -918,89 +919,4 @@ class Workout
 		
 		return nextStepInfo;
 	}
-}
-
-function testWorkouts ()
-{
-	var workouts = new [3];
-	
-	workouts[ 0 ] = simpleRepeatWorkout();
-	workouts[ 1 ] = OneTwoTwoOneWorkout();
-	workouts[ 2 ] = outAndBackWorkout();
-	
-	return workouts;
-}
-
-function simpleRepeatWorkout ()
-{
-	var workout = new Workout( "Simple Repeat Workout", 6);
-	
-	workout.workoutSteps[0] = new LapIntervalModel( "Warm Up", "Easy", workout.getDoneCallback() );
-	
-	workout.workoutSteps[1] = new TimeIntervalModel( 61000, "Hard Effort", "Work", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
-	workout.workoutSteps[2] = new TimeIntervalModel( 31000, "Recovery", "Easy", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
-	
-	workout.workoutSteps[3] = new TimeIntervalModel( 60000, "Hard Effort", "Work", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
-	workout.workoutSteps[4] = new TimeIntervalModel( 30000, "Recovery", "Easy", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
-
-	workout.workoutSteps[5] = new LapIntervalModel( "Cool Down", "Easy", workout.getDoneCallback() );
-	
-	return workout;
-}
-
-function OneTwoTwoOneWorkout ()
-{
-	var workout = new Workout( "1-2-2-1 Workout", 6);
-	
-	workout.workoutSteps[0] = new LapIntervalModel( "Warm Up", "Easy", workout.getDoneCallback() );
-	
-	var workStep1 = new DistanceIntervalModel( 1000, "Interval", "Work", workout.getDoneCallback(), null );
-	workout.workoutSteps[1] = new OnDistanceIntervalModel( 1500, workStep1, "1 Km Hard", "Easy", workout.getDoneCallback(), null );
-	
-	var workStep2 = new DistanceIntervalModel( 2000, "Interval", "Work", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
-	workout.workoutSteps[2] = new OnDistanceIntervalModel( 3000, workStep2, "2 Km Hard", "Easy", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
-	
-	var workStep3 = new DistanceIntervalModel( 2000, "Interval", "Work", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
-	workout.workoutSteps[3] = new OnDistanceIntervalModel( 1000, workStep3, "2 Km Hard", "Easy", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
-	
-	var workStep4 = new DistanceIntervalModel( 1000, "Interval", "Work", workout.getDoneCallback(), null );
-	workout.workoutSteps[4] = new OnDistanceIntervalModel( 1500, workStep4, "1 Km Hard", "Easy", workout.getDoneCallback(), null );
-
-	workout.workoutSteps[5] = new LapIntervalModel( "Cool Down", "Easy", workout.getDoneCallback() );
-	
-	return workout;
-}
-
-function onTimeOnDistanceRepeatWorkout ()
-{
-	var workout = new Workout( "On-Time On-Distance Repeat Workout", 6);
-	
-	workout.workoutSteps[0] = new LapIntervalModel( "Warm Up", "Easy", workout.getDoneCallback() );
-	
-	var workStep1 = new LapIntervalModel( "15 Step Sprint", "Work", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
-	workout.workoutSteps[1] = new OnTimeIntervalModel( 30000, workStep1, "Sprint on 30s", "Easy", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
-	
-	var workStep2 = new LapIntervalModel( "15 Step Sprint", "Work", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
-	workout.workoutSteps[2] = new OnTimeIntervalModel( 30000, workStep2, "Sprint on 30s", "Easy", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
-	
-	var workStep3 = new LapIntervalModel( "500 m Hard", "Work", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
-	workout.workoutSteps[3] = new OnDistanceIntervalModel( 1000, workStep3, "Sprint on 30s", "Easy", workout.getDoneCallback(), new RepeatAttribute( 1, 2 ) );
-	
-	var workStep4 = new LapIntervalModel( "500 m Hard", "Work", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
-	workout.workoutSteps[4] = new OnDistanceIntervalModel( 1000, workStep4, "Sprint on 30s", "Easy", workout.getDoneCallback(), new RepeatAttribute( 2, 2 ) );
-
-	workout.workoutSteps[5] = new LapIntervalModel( "Cool Down", "Easy", workout.getDoneCallback() );
-	
-	return workout;
-}
-
-function outAndBackWorkout ()
-{
-	var workout = new Workout( "Out and Back Workout", 2);
-	
-	workout.workoutSteps[0] = new DistanceIntervalModel( 2000, "Out", "Steady", workout.getDoneCallback(), null );
-
-	workout.workoutSteps[1] = new LapIntervalModel( "Back", "Steady", workout.getDoneCallback() );
-	
-	return workout;
 }

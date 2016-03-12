@@ -35,7 +35,7 @@
 		
 		<drawable id="divider100" />
 		
-		<label id="Page2HRText" text="Heart Rate" justification="Gfx.TEXT_JUSTIFY_LEFT" x="15" y="115" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />	
+		<label id="Page2HRText" text="Pace" justification="Gfx.TEXT_JUSTIFY_LEFT" x="15" y="115" font="Gfx.FONT_SMALL" color="Gfx.COLOR_BLACK" />	
 		<label id="Page2HR" text="___" justification="Gfx.TEXT_JUSTIFY_RIGHT" x="195" y="105" font="Gfx.FONT_NUMBER_HOT" color="Gfx.COLOR_BLACK" />
 	</layout>
 </resources>
