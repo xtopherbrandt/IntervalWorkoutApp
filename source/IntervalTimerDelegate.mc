@@ -13,10 +13,32 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     	// initialize the page to -1 --> workout list page
         _page = page;
         _view = view;
-        startTimer();
         _workout = null;
+        startTimer();
     }
+    
+	function startTimer()
+	{
 
+        updateTimer.start( method(:updateCallback), 500, true );
+        
+        timersRunning = true;
+
+	}
+    
+    function updateCallback()
+    {
+   	
+        count1 += 1;
+        
+        if ( _workout != null )
+        {
+       		_workout.timerUpdate();
+       	}
+        
+        Ui.requestUpdate();
+    }
+	
 	// Cycle through the pages after -1
     function onNextPage()
     {
@@ -56,6 +78,8 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
     	{
     		_workout.onSave();
     		
+    		_workout.dispose();
+    		
     		_workout = null;
     		
     		// go back to the main page
@@ -75,18 +99,17 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
 			// Tap the first line
 			if ( evt.getCoordinates()[1] < 50 )
 			{
-				_workout = WorkoutFactory.generateWorkout( 0 );
+				_workout = new WorkoutProcessor( WorkoutFactory.generateWorkout( 0 ) );
 			}
 			else if ( evt.getCoordinates()[1] < 100 ) // Tap the second line
 			{
-				_workout = WorkoutFactory.generateWorkout( 1 );
+				_workout = new WorkoutProcessor( WorkoutFactory.generateWorkout( 1 ) );
 			}
 			else if ( evt.getCoordinates()[1] > 100 ) // Tap the third line
 			{
-				_workout = WorkoutFactory.generateWorkout( 2 );
+				_workout = new WorkoutProcessor( WorkoutFactory.generateWorkout( 2 ) );
 			}
 			
-    		_workout.reset();
 			onNextPage();
 			
 		}
@@ -118,28 +141,6 @@ class IntervalTimerDelegate extends Ui.BehaviorDelegate
         }    	
  		
  		return true;
-    }
-
-	function startTimer()
-	{
-
-        timer1.start( method(:callback1), 500, true );
-        
-        timersRunning = true;
-
-	}
-    
-    function callback1()
-    {
-   	
-        count1 += 1;
-        
-        if ( _workout != null )
-        {
-       		_workout.timerUpdate();
-       	}
-        
-        Ui.requestUpdate();
     }
 	
     function switchToView( transition )

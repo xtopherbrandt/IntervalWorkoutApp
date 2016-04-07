@@ -1,10 +1,12 @@
 using Toybox.ActivityRecording;
 using Toybox.Activity;
 using Toybox.Lang;
-using Toybox.Attention;
+
+
 /*
 
 */
+
 
 enum
 {
@@ -19,14 +21,49 @@ enum
 
 enum
 {
+	WORKOUT_NOT_STARTED,
+	WORKOUT_STARTED,
+	WORKOUT_COMPLETE
+}
+
+enum
+{
 	ON_DURATION_NOT_STARTED,
 	ON_DURATION_WORK_STEP,
 	ON_DURATION_REST_STEP
 }
 
+enum
+{
+	REPEAT_SET_NOT_STARTED,
+	REPEAT_SET_STARTED
+}
+
+
+
+class intervalFinderInterface
+{
+	// returns the current interval within this processor or step
+	// returns null if there is no current interval
+	function getCurrentInterval()
+	{
+		return null;
+	}
+
+	// returns the next interval within this processor or step	
+	// returns null if there is no next interval
+	function getNextInterval()
+	{
+		return null;
+	}
+
+}
+
+
 // The base class for all steps
 // A step is a basic block within a workout. All steps have a name, a performance target, an onStart method and a callback to call when they are done.
-class IntervalStepBaseModel 
+
+class IntervalStepBaseModel extends intervalFinderInterface
 {
 	var name;
 	var intervalType;
@@ -55,45 +92,25 @@ class IntervalStepBaseModel
 		{
 			repeats = new RepeatAttribute(0,0);
 		}
-	}
-
-	function reset()
-	{
-		startActivityInfo = null;
-		remainingDuration = initialDuration;
 		
-		if ( repeats != null )
-		{
-			repeats.reset();
-		}
+	}
+	
+	function dispose()
+	{
+		name = null;
+		intervalType = null;
+		performanceTarget = null;
+		doneCallback = null;
+		repeats = null;
+		initialDuration = null;
+		startActivityInfo = null;
+		remainingDuration = null;
 	}
 		
 	function onStart()
 	{
-		alert();
-	}
-	
-	function alert()
-	{
-		var vibrationPattern = new [1];
-		
-		if ( !backlightIsOn )
-		{
-			backlightIsOn = true;
-			Attention.backlight( true );
-			backlightTimer.start( method(:backlightOff), 5000, false );
-		}
-		
-		vibrationPattern[0] = new Attention.VibeProfile( 50, 1000 );
-		
-		Attention.vibrate(vibrationPattern);
-	}
-	
-	function backlightOff ()
-	{
-		backlightIsOn = false;
-		Attention.backlight( false );
-		backlightTimer.stop();
+
+		alert.vibrateAndLight();
 	}
 	
 	function timerUpdate()
@@ -105,14 +122,16 @@ class IntervalStepBaseModel
 		return "";
 	}
 	
-	function getChildStep()
+	function getCurrentInterval()
 	{
+		return self;
 	}
 	
-	function getNextStepInfo()
+	function getNextInterval()
 	{
 		return null;
 	}
+	
 }
 
 // A strong data type that ensures the repeat step ID is less than or equal to the total repeat count
@@ -130,11 +149,6 @@ class RepeatAttribute
 			_count = repeatCount;
 			_initialized = true;
 		}
-	}
-
-	function reset()
-	{
-		_stepId = 0;
 	}
 	
 	function getStepId()
@@ -169,7 +183,6 @@ class LapIntervalModel extends IntervalStepBaseModel
 
 	function onLap()
 	{
-			
 		// Call the done callback
 		doneCallback.invoke();
 	}
@@ -340,56 +353,71 @@ class TimeIntervalModel extends IntervalStepBaseModel
 
 // An interval step type that has a work step added to it (like lap, distance or time) and includes an embedded rest step
 // Allows for intervals that repeat on a certain distance: can do stuff like 2 x 500m on 1000m --> every 1Km start a 500 m work interval.
-class OnTimeIntervalModel extends IntervalStepBaseModel
+class OnTimeProcessor extends intervalFinderInterface
 {
-	var workStep;		//definition of the work step
-	var restStepStartActivityInfo;	// the activity time stamp at the start of the rest interval
+	hidden var _workStep;		//definition of the work step
+	hidden var _recoveryStep;
 	var intervalState;
+	var workoutDoneCallback;
 	
-	function initialize( totalIntervalDuration, workIntervalStep, stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo )
+	function initialize( stepConfiguration, doneCallback )
 	{
-		workStep = workIntervalStep;
-		intervalState = ON_DURATION_NOT_STARTED;
-		IntervalStepBaseModel.initialize( stepName, SET_ON_TIME, totalIntervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo );
+		_workStep = WorkoutProcessor.GetStepProcessor( stepConfiguration[ "workStep" ], OnTimeProcessor.getDoneCallback(), null );
+		_recoveryStep = new TimeIntervalModel( stepConfiguration[ "duration" ], "Recovery", null, OnTimeProcessor.getDoneCallback(), null ); 
 		
-		// Set the done callback in the work step
-		workStep.doneCallback = getDoneCallback();
-	}
-
-	function reset()
-	{
-		restStepStartActivityInfo = null;
 		intervalState = ON_DURATION_NOT_STARTED;
+		workoutDoneCallback = doneCallback;
+		
+	}
+	
+	function dispose()
+	{
+		if ( _workStep != null )
+		{
+			_workStep.dispose();
+			_workStep = null;
+		}
+		
+		if ( _recoveryStep != null )
+		{
+			_recoveryStep.dispose();
+			_recoveryStep = null;
+		}
+		
+		intervalState = null;
 	}
 	
 	function onStart()
 	{
 		
-		// Take a snapshot of the activity at the start of the step
-		startActivityInfo = Activity.getActivityInfo();
-		
 		// Start the work step
-		if ( workStep != null )
+		if ( _workStep != null && _recoveryStep != null )
 		{		
+		
+			// Take a snapshot of the activity at the start of the step
+			// Set both the work step and recovery step to have the same start point
+			_workStep.startActivityInfo = Activity.getActivityInfo();
+			_recoveryStep.startActivityInfo = _workStep.startActivityInfo;
+			
 			// Change the state to the work step
 			intervalState = ON_DURATION_WORK_STEP;
 			
-			workStep.onStart();
+			_workStep.onStart();
 		}
 		else
 		{
 			// Change the state to the work step
 			intervalState = ON_DURATION_REST_STEP;
 		}
-		
-		IntervalStepBaseModel.onStart();
 	}
 
 	function onLap()
 	{
 		if ( intervalState == ON_DURATION_WORK_STEP )
 		{
-			workStep.onLap();
+			_workStep.onLap();
+			
+			// don't want to start the recovery step because it's really already running
 		}
 		else
 		{
@@ -400,10 +428,7 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 	// Callback called by a work step when it finishes
 	function onDone()
 	{
-		alert();
-		
-		// Take a snapshot of the acitivity at the start of the rest interval
-		restStepStartActivityInfo = Activity.getActivityInfo();
+		alert.vibrateAndLight();
 		
 		// Change the state to the rest state
 		intervalState = ON_DURATION_REST_STEP;
@@ -412,27 +437,46 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 	function stepComplete()
 	{
 		
-		// Call the done callback
-		doneCallback.invoke();
+		// Call the workout done callback
+		workoutDoneCallback.invoke();
 	}
 
 	function timerUpdate()
+	{
+		if ( intervalState == ON_DURATION_NOT_STARTED )
+		{
+			_workStep.timerUpdate();
+		}
+		else if ( intervalState == ON_DURATION_WORK_STEP )
+		{
+			_workStep.timerUpdate();
+		}
+		else if ( intervalState == ON_DURATION_REST_STEP )
+		{
+			_recoveryStep.timerUpdate();
+		}
+		else
+		{
+		}
+	}
+	
+	function timerUpdate_old()
 	{
 		var currentActivityInfo;
 		
 		currentActivityInfo = Activity.getActivityInfo();
 
-		if ( startActivityInfo != null )
+		if ( _workStep.startActivityInfo != null )
 		{
-			if ( startActivityInfo.timerTime != null && currentActivityInfo.timerTime != null )
+			if ( _workStep.startActivityInfo.timerTime != null && currentActivityInfo.timerTime != null )
 			{
 				// if the work step is running, pass this update through
 				if ( intervalState == ON_DURATION_WORK_STEP )
 				{
-					workStep.timerUpdate();
+					_workStep.timerUpdate();
 		
 					// Calculate the remaining number of seconds in this step for the rest step
-					remainingDuration = ((startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
+					remainingDuration = (( _workStep.startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
 				
 					// If we're out of time, limit the remaing duration to 0
 					if ( remainingDuration <= 0 )
@@ -443,7 +487,7 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 				else if ( intervalState == ON_DURATION_REST_STEP )
 				{
 					// Calculate the remaining number of seconds in this step
-					remainingDuration = ((startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
+					remainingDuration = (( _workStep.startActivityInfo.timerTime + initialDuration) - currentActivityInfo.timerTime);
 				
 					// Check if we're done
 					if ( remainingDuration <= 0 )
@@ -463,51 +507,48 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 	{
 		return method( :onDone );
 	}
-
-	function getChildStep()
+	
+	function getCurrentInterval ()
 	{
-		if ( intervalState == ON_DURATION_NOT_STARTED || intervalState == ON_DURATION_WORK_STEP )
+		if ( intervalState == ON_DURATION_NOT_STARTED )
 		{
-			// if there is a workstep
-			if ( workStep != null )
-			{
-				// if the work step has a child, return it, otherwise return the work step
-				if ( workStep.getChildStep() != null )
-				{
-					return workStep.getChildStep();
-				}
-				else
-				{
-					return workStep;
-				}
-			}
+			return _workStep;
+		}
+		else if ( intervalState == ON_DURATION_WORK_STEP )
+		{
+			return _workStep;
+		}
+		else if ( intervalState == ON_DURATION_REST_STEP )
+		{
+			return _recoveryStep;
+		}
+		else
+		{
+			return null;
 		}
 		
-		// if we're in the rest state or there is no work step then return null which will have this object passed as the child
-		return null;
 	}
 	
-	function getNextStepInfo ()
+	function getNextInterval()
 	{
-		if ( intervalState == ON_DURATION_NOT_STARTED && workStep != null )
+		if ( intervalState == ON_DURATION_NOT_STARTED )
 		{
-			if ( workStep.getNextStepInfo() != null )
-			{
-				return workStep.getNextStepInfo();
-			}
-			else
-			{
-				return workStep;
-			}
+			return _recoveryStep;
 		}
-		else if ( intervalState == ON_DURATION_WORK_STEP && remainingDuration > 0 ) // if we're on the work step and we still have time to recover, return this as the next step
+		else if ( intervalState == ON_DURATION_WORK_STEP )
 		{
-			return obj;
+			return _recoveryStep;
 		}
-		
-		// if we're in the rest state or there is no work step then return null which will have this object passed as the child
-		return null;
+		else if ( intervalState == ON_DURATION_REST_STEP )
+		{
+			return null;
+		}
+		else
+		{
+			return null;
+		}
 	}
+
 	
 	function getRemainingDuration()
 	{
@@ -529,56 +570,71 @@ class OnTimeIntervalModel extends IntervalStepBaseModel
 
 // An interval step type that has a work step added to it (like lap, distance or time) and includes an embedded rest step
 // Allows for intervals that repeat on a certain distance: can do stuff like 2 x 500m on 1000m --> every 1Km start a 500 m work interval.
-class OnDistanceIntervalModel extends IntervalStepBaseModel
+class OnDistanceProcessor extends intervalFinderInterface
 {
-	var workStep;		//definition of the work step
-	var restStepStartActivityInfo;	// the activity time stamp at the start of the rest interval
+	hidden var _workStep;		//definition of the work step
+	hidden var _recoveryStep;
 	var intervalState;
+	var workoutDoneCallback;
 	
-	function initialize( totalIntervalDuration, workIntervalStep, stepName, stepPerformanceTarget, stepDoneCallback, repeatInfo )
+	function initialize( stepConfiguration, doneCallback )
 	{
-		workStep = workIntervalStep;
-		intervalState = ON_DURATION_NOT_STARTED;
-		IntervalStepBaseModel.initialize( stepName, SET_ON_DISTANCE, totalIntervalDuration, stepPerformanceTarget, stepDoneCallback, repeatInfo );
+		_workStep = WorkoutProcessor.GetStepProcessor( stepConfiguration[ "workStep" ], getDoneCallback(), null );
+		_recoveryStep = new DistanceIntervalModel( stepConfiguration[ "duration" ], "Recovery", null, getDoneCallback(), null ); 
 		
-		// Set the done callback in the work step
-		workStep.doneCallback = getDoneCallback();
-	}
-
-	function reset()
-	{
-		restStepStartActivityInfo = null;
 		intervalState = ON_DURATION_NOT_STARTED;
+		workoutDoneCallback = doneCallback;
+		
+	}
+	
+	function dispose()
+	{
+		if ( _workStep != null )
+		{
+			_workStep.dispose();
+			_workStep = null;
+		}
+		
+		if ( _recoveryStep != null )
+		{
+			_recoveryStep.dispose();
+			_recoveryStep = null;
+		}
+		
+		intervalState = null;
 	}
 	
 	function onStart()
 	{
 		
-		// Take a snapshot of the activity at the start of the step
-		startActivityInfo = Activity.getActivityInfo();
-		
 		// Start the work step
-		if ( workStep != null )
+		if ( _workStep != null && _recoveryStep != null )
 		{		
+		
+			// Take a snapshot of the activity at the start of the step
+			// Set both the work step and recovery step to have the same start point
+			_workStep.startActivityInfo = Activity.getActivityInfo();
+			_recoveryStep.startActivityInfo = _workStep.startActivityInfo;
+			
 			// Change the state to the work step
 			intervalState = ON_DURATION_WORK_STEP;
 			
-			workStep.onStart();
+			_workStep.onStart();
 		}
 		else
 		{
 			// Change the state to the work step
 			intervalState = ON_DURATION_REST_STEP;
 		}
-		
-		IntervalStepBaseModel.onStart();
 	}
 
 	function onLap()
 	{
 		if ( intervalState == ON_DURATION_WORK_STEP )
 		{
-			workStep.onLap();
+			_workStep.onLap();
+			
+			// don't want to start the recovery step because it's really already running
 		}
 		else
 		{
@@ -589,10 +645,7 @@ class OnDistanceIntervalModel extends IntervalStepBaseModel
 	// Callback called by a work step when it finishes
 	function onDone()
 	{
-		alert();
-		
-		// Take a snapshot of the acitivity at the start of the rest interval
-		restStepStartActivityInfo = Activity.getActivityInfo();
+		alert.vibrateAndLight();
 		
 		// Change the state to the rest state
 		intervalState = ON_DURATION_REST_STEP;
@@ -601,11 +654,30 @@ class OnDistanceIntervalModel extends IntervalStepBaseModel
 	function stepComplete()
 	{
 		
-		// Call the done callback
-		doneCallback.invoke();
+		// Call the workout done callback
+		workoutDoneCallback.invoke();
 	}
 
 	function timerUpdate()
+	{
+		if ( intervalState == ON_DURATION_NOT_STARTED )
+		{
+			_workStep.timerUpdate();
+		}
+		else if ( intervalState == ON_DURATION_WORK_STEP )
+		{
+			_workStep.timerUpdate();
+		}
+		else if ( intervalState == ON_DURATION_REST_STEP )
+		{
+			_recoveryStep.timerUpdate();
+		}
+		else
+		{
+		}
+	}
+
+	function timerUpdate_old()
 	{
 		var currentActivityInfo;
 		
@@ -648,56 +720,53 @@ class OnDistanceIntervalModel extends IntervalStepBaseModel
 		}
 	}
 	
+	
 	function getDoneCallback()
 	{
 		return method( :onDone );
 	}
-
-	function getChildStep()
+	
+	function getCurrentInterval ()
 	{
-		if ( intervalState == ON_DURATION_NOT_STARTED || intervalState == ON_DURATION_WORK_STEP )
+		if ( intervalState == ON_DURATION_NOT_STARTED )
 		{
-			// if there is a workstep
-			if ( workStep != null )
-			{
-				// if the work step has a child, return it, otherwise return the work step
-				if ( workStep.getChildStep() != null )
-				{
-					return workStep.getChildStep();
-				}
-				else
-				{
-					return workStep;
-				}
-			}
+			return _workStep;
+		}
+		else if ( intervalState == ON_DURATION_WORK_STEP )
+		{
+			return _workStep;
+		}
+		else if ( intervalState == ON_DURATION_REST_STEP )
+		{
+			return _recoveryStep;
+		}
+		else
+		{
+			return null;
 		}
 		
-		// if we're in the rest state or there is no work step then return null which will have this object passed as the child
-		return null;
 	}
 	
-	function getNextStepInfo ()
+	function getNextInterval()
 	{
-		if ( intervalState == ON_DURATION_NOT_STARTED && workStep != null )
+		if ( intervalState == ON_DURATION_NOT_STARTED )
 		{
-			if ( workStep.getNextStepInfo() != null )
-			{
-				return workStep.getNextStepInfo();
-			}
-			else
-			{
-				return workStep;
-			}
+			return _recoveryStep;
 		}
-		else if ( intervalState == ON_DURATION_WORK_STEP && remainingDuration > 0 ) // if we're on the work step and we still have time to recover, return this as the next step
+		else if ( intervalState == ON_DURATION_WORK_STEP )
 		{
-			return obj;
+			return _recoveryStep;
 		}
-		
-		// if we're in the rest state or there is no work step then return null which will have this object passed as the child
-		return null;
+		else if ( intervalState == ON_DURATION_REST_STEP )
+		{
+			return null;
+		}
+		else
+		{
+			return null;
+		}
 	}
-	
+		
 	function getRemainingDuration()
 	{
 		// if we're over 1500 m then return km
@@ -712,6 +781,190 @@ class OnDistanceIntervalModel extends IntervalStepBaseModel
 	}
 
 }
+// A repeater step which allows a set of interval steps to be repeated a specified number of times.
+// A repeater contains a collection of other interval steps which are repeated in the same order everytime.
+// A repeater may also contain another repeater.
+// For example repeat the following 5 times: run 500 m (distance step), walk 60 seconds (time step)
+class RepeatProcessor extends intervalFinderInterface
+{
+
+	var repeatCount;
+	var currentRepeat;
+	var currentStepId;
+	var stepCount;
+	var currentState;
+	var workoutDoneCallback;
+	hidden var _steps;
+	var name;
+	var currentStepProcessor; // a processor step instance for the current step
+	var nextStepProcessor;	// a processor step instance for the next step
+	
+	function initialize( stepConfiguration, doneCallback )
+	{
+		repeatCount = stepConfiguration[ "repeatCount" ];
+		currentRepeat = 1;
+		currentStepId = 0;
+		stepCount = stepConfiguration[ "steps" ].size();
+		_steps = stepConfiguration[ "steps" ];
+		name = stepConfiguration[ "name" ];
+		currentState = REPEAT_SET_NOT_STARTED;
+		workoutDoneCallback = doneCallback;
+		
+		updateStepState();
+		
+	}
+	
+	function dispose()
+	{
+		_steps = null;
+		currentState = null;
+		
+		if ( currentStepProcessor != null )
+		{
+			currentStepProcessor.dispose();
+			currentStepProcessor = null;
+		}
+		
+		
+		if ( nextStepProcessor != null )
+		{
+			nextStepProcessor.dispose();
+			nextStepProcessor = null;
+		}
+	}
+	
+	function onStart()
+	{
+		System.println ("Repeat Interval Started " + name);
+		currentStepProcessor.onStart();
+		currentState = REPEAT_SET_STARTED;
+	}
+
+	function onLap()
+	{
+		// Call the done callback
+		currentStepProcessor.onLap();
+	}
+	
+	function onDone()
+	{
+		// if the step we're on within the current repeat is within repeat set, then increment and start the next step		
+		if ( currentStepId + 1 < stepCount )
+		{
+			updateStepState();
+			currentStepProcessor.onStart();
+		} // otherwise, if our current repeat is with the total repeats, then increment and start a new repeat
+		else if ( currentRepeat < repeatCount )
+		{
+			updateStepState();
+			currentStepProcessor.onStart();
+		}
+		else
+		{
+			workoutDoneCallback.invoke();
+		}
+	}
+	
+	// periodic update of the workout to update the remaining duration of the current step and move to the next step when done
+	function timerUpdate()
+	{
+		if ( currentStepId < stepCount )
+		{
+			currentStepProcessor.timerUpdate();
+		}
+	}
+	
+	function updateStepState()
+	{
+		
+		if ( currentState == REPEAT_SET_NOT_STARTED )
+		{
+			currentStepId = 0;
+			
+			if ( stepCount > 0 )
+			{
+				//set the current step
+				currentStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ 0 ], getDoneCallback(), new RepeatAttribute( currentRepeat, repeatCount ) );
+			}
+			
+			if ( stepCount > 1 ) 
+			{
+				nextStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ 1 ], getDoneCallback(), new RepeatAttribute( currentRepeat, repeatCount ) );
+			}
+		}
+		else if ( currentState == REPEAT_SET_STARTED )
+		{
+				
+			// update the current step
+			// if we have more steps
+			if ( currentStepId + 1 < stepCount )
+			{
+				currentStepId = currentStepId + 1;
+			}// else, if we have more repeats
+			else if ( currentRepeat + 1 <= repeatCount )
+			{
+				currentRepeat = currentRepeat + 1;
+				currentStepId = 0;
+			}
+			
+			currentStepProcessor.dispose();
+			currentStepProcessor = nextStepProcessor;
+			
+			// update the next step
+			// if we have more steps after this one
+			if ( currentStepId + 1 < stepCount )
+			{
+				nextStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ currentStepId + 1 ], getDoneCallback(), new RepeatAttribute( currentRepeat, repeatCount ) );
+			}// else, if we have more repeats
+			else if ( currentRepeat + 1 <= repeatCount )
+			{
+				nextStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ 0 ], getDoneCallback(), new RepeatAttribute( currentRepeat + 1, repeatCount ) );
+			}
+			else
+			{ 
+				nextStepProcessor = null;
+			}
+
+		}
+		else
+		{
+
+			// Update the current step
+			currentStepId = currentStepId + 1;
+			currentStepProcessor.dispose();
+			currentStepProcessor = nextStepProcessor;
+			currentStepProcessor.onStart();
+			
+			nextStepProcessor = null;
+		}
+	}
+	
+	function getDoneCallback()
+	{
+		return method( :onDone );
+	}
+	
+	function getCurrentInterval()
+	{
+		return currentStepProcessor.getCurrentInterval();
+	}
+	
+	function getNextInterval()
+	{
+		if ( currentStepProcessor.getNextInterval() != null )
+		{
+			return currentStepProcessor.getNextInterval();
+		}
+		else if ( nextStepProcessor != null )
+		{
+			return nextStepProcessor.getCurrentInterval();
+		}
+		else
+		{
+			return null;
+		}
+	}
+}
 
 class completeWorkoutModel extends IntervalStepBaseModel
 {
@@ -721,39 +974,48 @@ class completeWorkoutModel extends IntervalStepBaseModel
 	}
 }
 
-// The top level collection of the workout
-class Workout
+// The main workout processor
+class WorkoutProcessor extends intervalFinderInterface
 {
-	var name;
-	var workoutSteps; 	// an array of IntervalStepBaseModel
-	var currentStepId;	// the array identity of the current step
-	var totalSteps;
+	var workoutConfiguration;
+	var currentStepId;			// the array identity of the current step within the workout Configuration
+	var currentStepProcessor; // a processor step instance for the current step
+	var nextStepProcessor;	// a processor step instance for the next step
+	var currentState;
 	hidden var _session;
-	hidden var _completeStep;
 	
-	function initialize( workoutName, topLevelStepCount )
+	function initialize( workout )
 	{
-		name = workoutName;
-		currentStepId = 0;
-		totalSteps = topLevelStepCount;
-		workoutSteps = new [ topLevelStepCount ];
-		_session = null;
-		_completeStep = new completeWorkoutModel();
-	}
-	
-	function reset()
-	{
+		currentState = WORKOUT_NOT_STARTED;
+		workoutConfiguration = workout;
 		currentStepId = 0;
 		_session = null;
 		
-		// re-initialize the workout
-		for ( var i = 0; i < totalSteps; i++ )
-		{
-			workoutSteps[ i ].reset();
-		}
-	
+		updateStepState();
 	}
-
+	
+	function dispose ()
+	{
+		workoutConfiguration = null;
+		currentStepId = null;
+		
+		if ( currentStepProcessor != null )
+		{
+			currentStepProcessor.dispose();
+			currentStepProcessor = null;
+		}
+		
+		
+		if ( nextStepProcessor != null )
+		{
+			nextStepProcessor.dispose();
+			nextStepProcessor = null;
+		}
+		
+		_session = null;
+		
+	}
+	
 	function isRecording()
 	{
         if( Toybox has :ActivityRecording ) 
@@ -792,12 +1054,14 @@ class Workout
 				// note the name parameter must be < 15 characters on the Vivoactive, but is ignored by Garmin Connect
                 _session = Toybox.ActivityRecording.createSession({ :sport => Toybox.ActivityRecording.SPORT_RUNNING, :subSport => Toybox.ActivityRecording.SUB_SPORT_CARDIO_TRAINING, :name => "Interval Run"});
                 _session.start();
-                workoutSteps[currentStepId].onStart();
+                currentStepProcessor.onStart();
             }
             else if ( _session != null )
             {
             	_session.start();
             }
+            
+            currentState = WORKOUT_STARTED;
         }
 	}
 		
@@ -823,10 +1087,17 @@ class Workout
 	// the lap button always moves to the next interval step
 	function onLap()
 	{
-		if ( isRecording() && currentStepId < totalSteps )
+		
+		if ( isRecording() && currentStepId + 1 < workoutConfiguration[ "steps" ].size() )
 		{
 			_session.addLap();
-			workoutSteps[ currentStepId ].onLap();
+			currentStepProcessor.onLap();
+			return true;
+		}
+		else if ( isRecording() && currentStepId < workoutConfiguration[ "steps" ].size() )
+		{
+			_session.addLap();
+			currentStepProcessor.onLap();
 			return true;
 		}
 		else
@@ -835,88 +1106,150 @@ class Workout
 		}
 	}
 	
-	// Callback called by a child step when it finishes
+	// Callback called by a step processor when it finishes
 	function onDone()
 	{
-		
-		if ( currentStepId < totalSteps - 1 )
+		if ( currentStepId + 1 < workoutConfiguration[ "steps" ].size() )
 		{
-			currentStepId = currentStepId + 1;
-			workoutSteps[currentStepId].onStart();
+			updateStepState();
+			currentStepProcessor.onStart();
+			
 		}
-		else
+		else if ( currentStepId < workoutConfiguration[ "steps" ].size() )
 		{
+			// this is the end of the workout
 			onStop();
-			currentStepId = currentStepId + 1;
+		
+			currentState = WORKOUT_COMPLETE;
+			
+			updateStepState();
 		}
 	}
 	
 	// periodic update of the workout to update the remaining duration of the current step and move to the next step when done
 	function timerUpdate()
 	{
-		if ( currentStepId < totalSteps )
+		if ( currentStepId < workoutConfiguration[ "steps" ].size() )
 		{
-			workoutSteps[ currentStepId ].timerUpdate();
+			currentStepProcessor.timerUpdate();
 		}
 	}
 	
-	function getChildStep()
+	function updateStepState()
 	{
-		if ( currentStepId < totalSteps )
+		
+		if ( currentState == WORKOUT_NOT_STARTED )
 		{
-			if ( workoutSteps[currentStepId].getChildStep() == null )
+			currentStepId = 0;
+			
+			if ( workoutConfiguration[ "steps" ].size() > 0 )
 			{
-				return workoutSteps[currentStepId];
+				//set the current step
+				currentStepProcessor = GetStepProcessor ( workoutConfiguration[ "steps" ][ 0 ], getDoneCallback(), null );
+			}
+			
+			if ( workoutConfiguration[ "steps" ].size() > 1 )
+			{
+				nextStepProcessor = GetStepProcessor ( workoutConfiguration[ "steps" ][ 1 ], getDoneCallback(), null );
+			}
+		}
+		else if ( currentState == WORKOUT_STARTED )
+		{
+				 
+			// if the current step is a complex step then
+			// prompt it to update its state
+			// get the current and next steps from it
+			// when it returns null for the next step, get the step from the workout configuration
+			
+			// how do we know when to advance the workout step counter?
+			// how do we deal with back to back complex steps
+			
+			// Update the current step
+			currentStepId = currentStepId + 1;
+			currentStepProcessor.dispose();
+			currentStepProcessor = nextStepProcessor;
+		
+			// Set up the next step
+
+			if ( currentStepId + 1 < workoutConfiguration[ "steps" ].size() )
+			// if there are more steps in the configuration
+			{
+				nextStepProcessor = GetStepProcessor ( workoutConfiguration[ "steps" ][ currentStepId + 1 ], getDoneCallback(), null );
 			}
 			else
 			{
-				return workoutSteps[currentStepId].getChildStep();
+				nextStepProcessor = new completeWorkoutModel();
 			}
-			
+
 		}
-		
-		return _completeStep;
+		else
+		{
+
+			// Update the current step
+			currentStepId = currentStepId + 1;
+			currentStepProcessor.dispose();
+			currentStepProcessor = nextStepProcessor;
+			currentStepProcessor.onStart();
+			
+			nextStepProcessor = null;
+		}
 	}
 	
+	static function GetStepProcessor ( stepConfiguration, doneCallback, repeatInfo )
+	{
+		var step = null;
+		
+		if ( stepConfiguration[ "type" ] == STEP_LAP )
+		{
+			step = new LapIntervalModel( stepConfiguration[ "name" ], null, doneCallback, repeatInfo );
+		}
+		else if ( stepConfiguration[ "type" ] == STEP_TIME )
+		{
+			step = new TimeIntervalModel( stepConfiguration[ "duration" ], stepConfiguration[ "name" ], null, doneCallback, repeatInfo );
+		}
+		else if ( stepConfiguration[ "type" ] == STEP_DISTANCE )
+		{
+			step = new DistanceIntervalModel( stepConfiguration[ "duration" ], stepConfiguration[ "name" ], null, doneCallback, repeatInfo );
+		}
+		else if ( stepConfiguration[ "type" ] == SET_ON_TIME )
+		{
+			step = new OnTimeProcessor( stepConfiguration, doneCallback );
+		}
+		else if ( stepConfiguration[ "type" ] == SET_ON_DISTANCE )
+		{
+			step = new OnDistanceProcessor( stepConfiguration, doneCallback );
+		}
+		else if ( stepConfiguration[ "type" ] == REPEATER )
+		{
+			step = new RepeatProcessor( stepConfiguration, doneCallback );
+		}
+	
+		return step;	
+	}
+		
 	function getDoneCallback()
 	{
 		return method( :onDone );
 	}
 	
-	function getNextStepInfo()
+	function getCurrentInterval()
 	{
-		var nextStepInfo;
-		
-		// if the step we're on within the workout set, then check the next step		
-		if ( currentStepId < totalSteps - 1 )
+		return currentStepProcessor.getCurrentInterval();
+	}
+	
+	function getNextInterval()
+	{
+		if ( currentStepProcessor.getNextInterval() != null )
 		{
-			// Ask the current step if it can return next step info (this would be the case if the next step was a repeater or an onTime/onDistance)
-			nextStepInfo = workoutSteps[currentStepId].getNextStepInfo();
-			
-			// If the current step can't return next step info, then ask the next step info to the next step
-			if ( nextStepInfo == null )
-			{
-				nextStepInfo = workoutSteps[currentStepId + 1].getChildStep();
-				
-				// if the next step can't return next step info, then return the current step info for the next step
-				if ( nextStepInfo == null )
-				{
-					nextStepInfo = workoutSteps[currentStepId + 1];
-				}
-			}
-			
-		} // otherwise, if our current repeat is with the total repeats, then increment and start a new repeat
-		else if ( currentStepId < totalSteps )
+			return currentStepProcessor.getNextInterval();
+		}
+		else if ( nextStepProcessor != null )
 		{
-			// the next step is the finish
-			nextStepInfo = _completeStep ;
+			return nextStepProcessor.getCurrentInterval();
 		}
 		else
 		{
-			// no more steps
-			nextStepInfo = null;
+			return null;
 		}
-		
-		return nextStepInfo;
 	}
 }

@@ -3,14 +3,12 @@ using Toybox.WatchUi as Ui;
 using Toybox.Position as Position;
 using Toybox.Sensor as Sensor;
 
-
-var timer1;
 var count1 = 0;
 var timersRunning = false;
 var mainDelegate;
 var initialView;
-var backlightTimer;
-var backlightIsOn;
+var updateTimer;
+var alert;
 
 class IntervalTimerApp extends App.AppBase 
 {
@@ -21,18 +19,17 @@ class IntervalTimerApp extends App.AppBase
     {
     	
 		initialView = new IntervalTimerListView();
-        timer1 = new Timer.Timer();
-		backlightTimer = new Timer.Timer();
-		backlightIsOn = false;
-				
+		updateTimer = new Timer.Timer();		
 		Position.enableLocationEvents( Position.LOCATION_ONE_SHOT, method(:onPosition) );
 		Sensor.enableSensorEvents( null );
 		Sensor.setEnabledSensors( [Sensor.SENSOR_HEARTRATE] );
-
+		
+		alert = new Alert();
+		
 		mainDelegate = new IntervalTimerDelegate( -1, initialView );    	
     
     }
-
+	
     // onStop() is called when your application is exiting
     function onStop() 
     {
