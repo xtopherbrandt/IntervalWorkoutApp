@@ -3,7 +3,7 @@
 
     <string id="prompt">Click the menu button</string>
 
-    <string id="workout_1">Simple Repeats</string>
-    <string id="workout_2">1-2-2-1</string>
+    <string id="workout_1">4 - 1 - 1</string>
+    <string id="workout_2">4 - 3 - 2 - 1</string>
     <string id="workout_3">2 + 1 Repeats</string>
 </strings>

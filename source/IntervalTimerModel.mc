@@ -254,7 +254,7 @@ class DistanceIntervalModel extends IntervalStepBaseModel
 	
 	function getRemainingDuration()
 	{
-		// if we're over 1500 m then return km
+		// if we're over 1000 m then return km
 		if ( remainingDuration > 1000 )
 		{
 			return format( "$1$ km", [(remainingDuration / 1000).format("%4.2f")] );
@@ -359,14 +359,16 @@ class OnTimeProcessor extends intervalFinderInterface
 	hidden var _recoveryStep;
 	var intervalState;
 	var workoutDoneCallback;
+	var workoutLapCallback;
 	
-	function initialize( stepConfiguration, doneCallback )
+	function initialize( stepConfiguration, doneCallback, lapCallback )
 	{
-		_workStep = WorkoutProcessor.GetStepProcessor( stepConfiguration[ "workStep" ], OnTimeProcessor.getDoneCallback(), null );
-		_recoveryStep = new TimeIntervalModel( stepConfiguration[ "duration" ], "Recovery", null, OnTimeProcessor.getDoneCallback(), null ); 
+		_workStep = WorkoutProcessor.GetStepProcessor( stepConfiguration[ "workStep" ], OnTimeProcessor.getDoneCallback(), lapCallback, null );
+		_recoveryStep = new TimeIntervalModel( stepConfiguration[ "duration" ], "Recovery", null, OnTimeProcessor.getDoneCallback(), lapCallback, null ); 
 		
 		intervalState = ON_DURATION_NOT_STARTED;
 		workoutDoneCallback = doneCallback;
+		workoutLapCallback = lapCallback;
 		
 	}
 	
@@ -429,6 +431,11 @@ class OnTimeProcessor extends intervalFinderInterface
 	function onDone()
 	{
 		alert.vibrateAndLight();
+
+		if ( workoutLapCallback != null )
+		{
+			workoutLapCallback.invoke();
+		}		
 		
 		// Change the state to the rest state
 		intervalState = ON_DURATION_REST_STEP;
@@ -436,7 +443,11 @@ class OnTimeProcessor extends intervalFinderInterface
 
 	function stepComplete()
 	{
-		
+		if ( workoutLapCallback != null )
+		{
+			workoutLapCallback.invoke();
+		}
+				
 		// Call the workout done callback
 		workoutDoneCallback.invoke();
 	}
@@ -576,14 +587,16 @@ class OnDistanceProcessor extends intervalFinderInterface
 	hidden var _recoveryStep;
 	var intervalState;
 	var workoutDoneCallback;
+	var workoutLapCallback;
 	
-	function initialize( stepConfiguration, doneCallback )
+	function initialize( stepConfiguration, doneCallback, lapCallback )
 	{
-		_workStep = WorkoutProcessor.GetStepProcessor( stepConfiguration[ "workStep" ], getDoneCallback(), null );
-		_recoveryStep = new DistanceIntervalModel( stepConfiguration[ "duration" ], "Recovery", null, getDoneCallback(), null ); 
+		_workStep = WorkoutProcessor.GetStepProcessor( stepConfiguration[ "workStep" ], getDoneCallback(), lapCallback, null );
+		_recoveryStep = new DistanceIntervalModel( stepConfiguration[ "duration" ], "Recovery", null, getDoneCallback(), lapCallback, null ); 
 		
 		intervalState = ON_DURATION_NOT_STARTED;
 		workoutDoneCallback = doneCallback;
+		workoutLapCallback = lapCallback;
 		
 	}
 	
@@ -647,12 +660,22 @@ class OnDistanceProcessor extends intervalFinderInterface
 	{
 		alert.vibrateAndLight();
 		
+		if ( workoutLapCallback != null )
+		{
+			workoutLapCallback.invoke();
+		}
+		
 		// Change the state to the rest state
 		intervalState = ON_DURATION_REST_STEP;
 	}
 
 	function stepComplete()
 	{
+		if ( workoutLapCallback != null )
+		{
+			workoutLapCallback.invoke();
+		}
+		
 		
 		// Call the workout done callback
 		workoutDoneCallback.invoke();
@@ -794,12 +817,13 @@ class RepeatProcessor extends intervalFinderInterface
 	var stepCount;
 	var currentState;
 	var workoutDoneCallback;
+	var workoutLapCallback;
 	hidden var _steps;
 	var name;
 	var currentStepProcessor; // a processor step instance for the current step
 	var nextStepProcessor;	// a processor step instance for the next step
 	
-	function initialize( stepConfiguration, doneCallback )
+	function initialize( stepConfiguration, doneCallback, lapCallback )
 	{
 		repeatCount = stepConfiguration[ "repeatCount" ];
 		currentRepeat = 1;
@@ -809,6 +833,7 @@ class RepeatProcessor extends intervalFinderInterface
 		name = stepConfiguration[ "name" ];
 		currentState = REPEAT_SET_NOT_STARTED;
 		workoutDoneCallback = doneCallback;
+		workoutLapCallback = lapCallback;
 		
 		updateStepState();
 		
@@ -842,12 +867,15 @@ class RepeatProcessor extends intervalFinderInterface
 
 	function onLap()
 	{
+		
 		// Call the done callback
 		currentStepProcessor.onLap();
 	}
 	
 	function onDone()
 	{
+		workoutLapCallback.invoke();
+	
 		// if the step we're on within the current repeat is within repeat set, then increment and start the next step		
 		if ( currentStepId + 1 < stepCount )
 		{
@@ -884,12 +912,12 @@ class RepeatProcessor extends intervalFinderInterface
 			if ( stepCount > 0 )
 			{
 				//set the current step
-				currentStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ 0 ], getDoneCallback(), new RepeatAttribute( currentRepeat, repeatCount ) );
+				currentStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ 0 ], getDoneCallback(), workoutLapCallback, new RepeatAttribute( currentRepeat, repeatCount ) );
 			}
 			
 			if ( stepCount > 1 ) 
 			{
-				nextStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ 1 ], getDoneCallback(), new RepeatAttribute( currentRepeat, repeatCount ) );
+				nextStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ 1 ], getDoneCallback(), workoutLapCallback, new RepeatAttribute( currentRepeat, repeatCount ) );
 			}
 		}
 		else if ( currentState == REPEAT_SET_STARTED )
@@ -914,11 +942,11 @@ class RepeatProcessor extends intervalFinderInterface
 			// if we have more steps after this one
 			if ( currentStepId + 1 < stepCount )
 			{
-				nextStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ currentStepId + 1 ], getDoneCallback(), new RepeatAttribute( currentRepeat, repeatCount ) );
+				nextStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ currentStepId + 1 ], getDoneCallback(), workoutLapCallback, new RepeatAttribute( currentRepeat, repeatCount ) );
 			}// else, if we have more repeats
 			else if ( currentRepeat + 1 <= repeatCount )
 			{
-				nextStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ 0 ], getDoneCallback(), new RepeatAttribute( currentRepeat + 1, repeatCount ) );
+				nextStepProcessor = WorkoutProcessor.GetStepProcessor ( _steps[ 0 ], getDoneCallback(), workoutLapCallback, new RepeatAttribute( currentRepeat + 1, repeatCount ) );
 			}
 			else
 			{ 
@@ -1090,13 +1118,13 @@ class WorkoutProcessor extends intervalFinderInterface
 		
 		if ( isRecording() && currentStepId + 1 < workoutConfiguration[ "steps" ].size() )
 		{
-			_session.addLap();
+			saveLap();
 			currentStepProcessor.onLap();
 			return true;
 		}
 		else if ( isRecording() && currentStepId < workoutConfiguration[ "steps" ].size() )
 		{
-			_session.addLap();
+			saveLap();
 			currentStepProcessor.onLap();
 			return true;
 		}
@@ -1104,6 +1132,13 @@ class WorkoutProcessor extends intervalFinderInterface
 		{
 			return false;
 		}
+	}
+	
+	function saveLap()
+	{
+		_session.addLap();
+		
+		return null;
 	}
 	
 	// Callback called by a step processor when it finishes
@@ -1145,12 +1180,12 @@ class WorkoutProcessor extends intervalFinderInterface
 			if ( workoutConfiguration[ "steps" ].size() > 0 )
 			{
 				//set the current step
-				currentStepProcessor = GetStepProcessor ( workoutConfiguration[ "steps" ][ 0 ], getDoneCallback(), null );
+				currentStepProcessor = GetStepProcessor ( workoutConfiguration[ "steps" ][ 0 ], getDoneCallback(), getLapCallback(), null );
 			}
 			
 			if ( workoutConfiguration[ "steps" ].size() > 1 )
 			{
-				nextStepProcessor = GetStepProcessor ( workoutConfiguration[ "steps" ][ 1 ], getDoneCallback(), null );
+				nextStepProcessor = GetStepProcessor ( workoutConfiguration[ "steps" ][ 1 ], getDoneCallback(), getLapCallback(), null );
 			}
 		}
 		else if ( currentState == WORKOUT_STARTED )
@@ -1174,7 +1209,7 @@ class WorkoutProcessor extends intervalFinderInterface
 			if ( currentStepId + 1 < workoutConfiguration[ "steps" ].size() )
 			// if there are more steps in the configuration
 			{
-				nextStepProcessor = GetStepProcessor ( workoutConfiguration[ "steps" ][ currentStepId + 1 ], getDoneCallback(), null );
+				nextStepProcessor = GetStepProcessor ( workoutConfiguration[ "steps" ][ currentStepId + 1 ], getDoneCallback(), getLapCallback(), null );
 			}
 			else
 			{
@@ -1195,7 +1230,7 @@ class WorkoutProcessor extends intervalFinderInterface
 		}
 	}
 	
-	static function GetStepProcessor ( stepConfiguration, doneCallback, repeatInfo )
+	static function GetStepProcessor ( stepConfiguration, doneCallback, lapCallback, repeatInfo )
 	{
 		var step = null;
 		
@@ -1213,15 +1248,15 @@ class WorkoutProcessor extends intervalFinderInterface
 		}
 		else if ( stepConfiguration[ "type" ] == SET_ON_TIME )
 		{
-			step = new OnTimeProcessor( stepConfiguration, doneCallback );
+			step = new OnTimeProcessor( stepConfiguration, doneCallback, lapCallback );
 		}
 		else if ( stepConfiguration[ "type" ] == SET_ON_DISTANCE )
 		{
-			step = new OnDistanceProcessor( stepConfiguration, doneCallback );
+			step = new OnDistanceProcessor( stepConfiguration, doneCallback, lapCallback );
 		}
 		else if ( stepConfiguration[ "type" ] == REPEATER )
 		{
-			step = new RepeatProcessor( stepConfiguration, doneCallback );
+			step = new RepeatProcessor( stepConfiguration, doneCallback, lapCallback );
 		}
 	
 		return step;	
@@ -1230,6 +1265,11 @@ class WorkoutProcessor extends intervalFinderInterface
 	function getDoneCallback()
 	{
 		return method( :onDone );
+	}
+		
+	function getLapCallback()
+	{
+		return method( :saveLap );
 	}
 	
 	function getCurrentInterval()
