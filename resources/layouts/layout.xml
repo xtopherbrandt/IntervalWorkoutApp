@@ -5,6 +5,7 @@
 		<label id="workout_3" x="center" y="115" text="@Strings.workout_3" color="Gfx.COLOR_WHITE" justification="Gfx.TEXT_JUSTIFY_CENTER" />
 	
 	</layout>
+	
 	<layout id="IntervalStepLayout">
 		<drawable id="MainBackground" />
 		<label id="IntervalName" text="" justification="Gfx.TEXT_JUSTIFY_CENTER" x="center" y="3" font="Gfx.FONT_MEDIUM" color="Gfx.COLOR_BLACK" />

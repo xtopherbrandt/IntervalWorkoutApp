@@ -18,9 +18,10 @@ class IntervalTimerApp extends App.AppBase
     function onStart() 
     {
     	
+		//initialView = new WorkoutPickerChooser();
 		initialView = new IntervalTimerListView();
 		updateTimer = new Timer.Timer();		
-		Position.enableLocationEvents( Position.LOCATION_ONE_SHOT, method(:onPosition) );
+		Position.enableLocationEvents( Position.LOCATION_CONTINUOUS, method(:onPosition) );
 		Sensor.enableSensorEvents( null );
 		Sensor.setEnabledSensors( [Sensor.SENSOR_HEARTRATE] );
 		
@@ -45,7 +46,8 @@ class IntervalTimerApp extends App.AppBase
     function getInitialView() 
     {
     	
-        return [ initialView, mainDelegate ];
+        //return [ initialView, new PickerChooserDelegate() ];
+		return [ initialView, mainDelegate ];
     }
 
 }

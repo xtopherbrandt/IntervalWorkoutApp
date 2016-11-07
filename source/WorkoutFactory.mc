@@ -15,12 +15,51 @@ class WorkoutFactory
 		}
 		else if ( workoutId == 2 )
 		{
-			return TwoPlusOneRepeatWorkout();
+			return OnTimeRepeatWorkout();
 		}
 		else
 		{
 			return null;
 		}
+	}
+	
+	static function WorkoutTemplateNameList()
+	{
+		return
+		{
+			"templates" => 
+			[
+				{
+					:name => "Simple Workout",
+					:id => 0
+				},
+				{
+					:name => "1-2-2-1",
+					:id => 1
+				},
+				{
+					:name => "Timed Repeats",
+					:id => 2
+				},
+				{
+					:name => "4 + 1 Repeats",
+					:id => 3
+				},
+				{
+					:name => "4-1-1",
+					:id => 4
+				},
+				{
+					:name => "4-3-2-1",
+					:id => 3
+				},
+				{
+					:name => "On Time Repeats",
+					:id => 6
+				}
+				
+			]
+		};
 	}
 	
 	static function simpleRepeatWorkout()
@@ -53,6 +92,43 @@ class WorkoutFactory
 						"name" => "10 Steps",
 						"type" => STEP_LAP
 					}
+				},
+				{
+					"name" => "Cool Down",
+					"type" => STEP_LAP
+				}
+			] 
+		};
+	}	
+	
+	static function OnTimeRepeatWorkout()
+	{
+		return 
+		{ 
+			"name" => "On Time Repeats",
+			"steps" => 
+			[
+				{
+					"name" => "Warm Up",
+					"type" => STEP_LAP
+				},
+				{
+					"name" => "Hill Set",
+					"type" => REPEATER,
+					"repeatCount" => 4,
+					"steps" =>
+					[
+						{
+							"name" => "On Time",
+							"type" => SET_ON_TIME,
+							"duration" => 180000,
+							"workStep" =>
+							{
+								"name" => "20 Steps",
+								"type" => STEP_LAP
+							}
+						}
+					]
 				},
 				{
 					"name" => "Cool Down",

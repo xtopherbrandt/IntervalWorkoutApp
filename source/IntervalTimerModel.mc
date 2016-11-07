@@ -965,6 +965,7 @@ class RepeatProcessor extends intervalFinderInterface
 			
 			nextStepProcessor = null;
 		}
+		
 	}
 	
 	function getDoneCallback()
